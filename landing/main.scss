@@ -1,0 +1,69 @@
+@use '@shared/styles/base';
+@use '@shared/styles/variables' as vars;
+@use '@shared/styles/mixins' as mixins;
+
+body {
+  color: #213547;
+  background: radial-gradient(circle at top, #f8f9ff, vars.$color-surface 40%, vars.$color-background-light);
+}
+
+.hero {
+  min-height: 100vh;
+  padding: 5rem 1.5rem;
+  @include mixins.flex-center;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(100, 108, 255, 0.08), rgba(116, 123, 255, 0.32));
+}
+
+.hero__content {
+  max-width: 480px;
+}
+
+.hero h1 {
+  margin-bottom: 1rem;
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+}
+
+.hero p {
+  margin: 0 auto 2rem;
+  font-size: 1.1rem;
+  color: vars.$color-text-muted;
+}
+
+.cta {
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: vars.$color-background-light;
+  background-color: vars.$color-primary;
+  cursor: pointer;
+  @include mixins.transition(all);
+}
+
+.cta:hover,
+.cta:focus-visible {
+  background-color: vars.$color-primary-hover;
+}
+
+.cta:focus-visible {
+  @include mixins.focus-ring(vars.$color-primary-hover);
+}
+
+.app-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-weight: 600;
+  color: vars.$color-primary;
+  @include mixins.transition(color);
+}
+
+.app-link:hover,
+.app-link:focus-visible {
+  color: vars.$color-primary-hover;
+}
+
+.app-link:focus-visible {
+  @include mixins.focus-ring(vars.$color-primary-hover);
+}

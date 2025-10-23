@@ -1,0 +1,13 @@
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin focus-ring($color: currentColor) {
+  outline: 4px auto $color;
+}
+
+@mixin transition($properties, $duration: 300ms, $timing: ease) {
+  transition: $properties $duration $timing;
+}

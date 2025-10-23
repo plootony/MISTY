@@ -1,0 +1,26 @@
+{
+  "name": "misty",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode app",
+    "build": "vite build --mode app",
+    "preview": "vite preview --mode app",
+    "dev:landing": "vite --mode landing",
+    "dev:app": "vite --mode app",
+    "build:landing": "vite build --mode landing",
+    "build:app": "vite build --mode app"
+  },
+  "dependencies": {
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "sass": "^1.93.2",
+    "vite": "npm:rolldown-vite@7.1.14"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@7.1.14"
+  }
+}
