@@ -1,0 +1,82 @@
+@use '@shared/styles/base';
+@use '@shared/styles/variables' as vars;
+@use '@shared/styles/mixins' as mixins;
+
+:root {
+  color-scheme: light dark;
+  color: vars.$color-text-light;
+  background-color: vars.$color-background-dark;
+}
+
+a {
+  font-weight: 500;
+  color: vars.$color-primary;
+  text-decoration: inherit;
+  @include mixins.transition('color');
+}
+
+a:hover {
+  color: vars.$color-primary-hover;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  @include mixins.flex-center;
+  background-color: vars.$color-background-dark;
+  color: vars.$color-text-light;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  @include mixins.transition('border-color');
+}
+
+button:hover {
+  border-color: vars.$color-primary;
+}
+
+button:focus,
+button:focus-visible {
+  @include mixins.focus-ring(vars.$color-primary-hover);
+}
+
+.card {
+  padding: 2em;
+}
+
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: vars.$color-background-light;
+  }
+
+  body {
+    background-color: vars.$color-background-light;
+    color: #213547;
+  }
+
+  button {
+    background-color: vars.$color-surface;
+  }
+}
