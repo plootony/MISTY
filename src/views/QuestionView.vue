@@ -1,7 +1,18 @@
 <script setup>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user.store';
+import { useModalStore } from '@/stores/modal.store';
 
+const router = useRouter();
 const userStore = useUserStore();
+const modalStore = useModalStore();
+const question = ref('');
+
+const submitQuestion = () => {
+    modalStore.userQuestion = question.value;
+    router.push('/card-selection');
+};
 </script>
 
 <template>
@@ -15,12 +26,13 @@ const userStore = useUserStore();
 
         <div class="question__content">
             <textarea 
+                v-model="question"
                 class="question__textarea" 
                 name="spreadText" 
                 placeholder="Что делать, если не к чему стремиться?"
             ></textarea>
             
-            <button class="btn btn--primary">Задать вопрос</button>
+            <button class="btn btn--primary" @click="submitQuestion">Задать вопрос</button>
         </div>
     </div>
 </template>

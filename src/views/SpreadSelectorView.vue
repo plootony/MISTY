@@ -1,9 +1,18 @@
 <script setup>
+import { useRouter } from 'vue-router';
 import { useSpreadSelector } from '@/stores/spreadSelector.store';
 import { useUserStore } from '@/stores/user.store';
+import { useModalStore } from '@/stores/modal.store';
 
+const router = useRouter();
 const spreadStore = useSpreadSelector();
 const userStore = useUserStore();
+const modalStore = useModalStore();
+
+const selectSpread = (spread) => {
+    modalStore.selectedSpread = spread;
+    router.push('/question');
+};
 </script>
 
 <template>
@@ -19,6 +28,7 @@ const userStore = useUserStore();
                 v-for="spread in spreadStore.spreads" 
                 :key="spread.id" 
                 class="spread-selector__card"
+                @click="selectSpread(spread)"
             >
                 <img :src="spread.image" :alt="spread.name" class="spread-selector__card-image">
                 <div class="spread-selector__card-body">

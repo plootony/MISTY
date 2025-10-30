@@ -1,12 +1,25 @@
 <script setup>
+import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user.store';
+import { useModalStore } from '@/stores/modal.store';
 
+const router = useRouter();
 const userStore = useUserStore();
+const modalStore = useModalStore();
+
+const startOver = () => {
+    modalStore.resetSelection();
+    router.push('/');
+};
+
+const closeModal = () => {
+    modalStore.closeAnswerModal();
+};
 </script>
 
 <template>
     <div class="modal">
-        <div class="modal__overlay"></div>
+        <div class="modal__overlay" @click="closeModal"></div>
         <div class="modal__container">
             <div class="modal__content modal__content--answer">
                 <div class="answer">
@@ -31,7 +44,7 @@ const userStore = useUserStore();
                         </p>
                     </div>
 
-                    <button class="btn btn--primary">Еще раз</button>
+                    <button class="btn btn--primary" @click="startOver">Еще раз</button>
                 </div>
             </div>
         </div>

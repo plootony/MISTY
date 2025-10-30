@@ -1,9 +1,28 @@
 <script setup>
+import { watch } from 'vue';
 import { useUserStore } from '@/stores/user.store';
 import { useCardSelector } from '@/stores/cardSelector.store';
+import { useModalStore } from '@/stores/modal.store';
+import CardResultModal from '@/components/CardResultModal.vue';
+import AnswerModal from '@/components/AnswerModal.vue';
 
 const userStore = useUserStore();
 const cardStore = useCardSelector();
+const modalStore = useModalStore();
+
+const selectCard = (card) => {
+    const maxCards = modalStore.selectedSpread?.cardsCount || 3;
+    if (modalStore.selectedCards.length < maxCards) {
+        modalStore.addSelectedCard(card);
+    }
+};
+
+watch(() => modalStore.selectedCards.length, (newLength) => {
+    const maxCards = modalStore.selectedSpread?.cardsCount || 3;
+    if (newLength === maxCards) {
+        modalStore.openCardResultModal();
+    }
+});
 </script>
 
 <template>
@@ -16,9 +35,19 @@ const cardStore = useCardSelector();
         </div>
 
         <div class="card-selector__selected">
-            <div class="card-selector__selected-card"></div>
-            <div class="card-selector__selected-card"></div>
-            <div class="card-selector__selected-card"></div>
+            <div 
+                v-for="index in (modalStore.selectedSpread?.cardsCount || 3)" 
+                :key="index"
+                class="card-selector__selected-card"
+                :class="{ 'card-selector__selected-card--filled': modalStore.selectedCards[index - 1] }"
+            >
+                <img 
+                    v-if="modalStore.selectedCards[index - 1]"
+                    class="card-selector__selected-card-image" 
+                    src="@/assets/images/card-back.png" 
+                    alt="Выбранная карта"
+                >
+            </div>
         </div>
 
         <div class="card-selector__deck">
@@ -26,6 +55,7 @@ const cardStore = useCardSelector();
                 v-for="card in cardStore.deck" 
                 :key="card.id" 
                 class="card-selector__deck-card"
+                @click="selectCard(card)"
             >
                 <img 
                     class="card-selector__deck-card-image" 
@@ -34,6 +64,9 @@ const cardStore = useCardSelector();
                 >
             </div>
         </div>
+
+        <CardResultModal v-if="modalStore.isCardResultModalOpen" />
+        <AnswerModal v-if="modalStore.isAnswerModalOpen" />
     </div>
 </template>
 
@@ -98,6 +131,16 @@ const cardStore = useCardSelector();
         background-color: $color-bg-light;
         border-radius: 12px;
         box-shadow: 0px 15px 35px 0px rgba(10, 10, 12, 0.3215686274509804);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    &__selected-card-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     &__deck {

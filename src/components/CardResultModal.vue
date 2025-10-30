@@ -1,12 +1,23 @@
 <script setup>
 import { useCardSelector } from '@/stores/cardSelector.store';
+import { useModalStore } from '@/stores/modal.store';
 
 const cardStore = useCardSelector();
+const modalStore = useModalStore();
+
+const goToAnswer = () => {
+    modalStore.closeCardResultModal();
+    modalStore.openAnswerModal();
+};
+
+const closeModal = () => {
+    modalStore.closeCardResultModal();
+};
 </script>
 
 <template>
     <div class="modal">
-        <div class="modal__overlay"></div>
+        <div class="modal__overlay" @click="closeModal"></div>
         <div class="modal__container">
             <div class="modal__content modal__content--card-result">
                 <div class="card-result">
@@ -33,7 +44,7 @@ const cardStore = useCardSelector();
                             </p>
                         </div>
 
-                        <button class="btn btn--primary">Далее</button>
+                        <button class="btn btn--primary" @click="goToAnswer">Далее</button>
                     </div>
                 </div>
             </div>
@@ -75,6 +86,7 @@ const cardStore = useCardSelector();
     &__content {
         background-color: $color-bg-light;
         box-shadow: 0px 15px 35px 0px rgba(10, 10, 12, 0.3215686274509804);
+        max-width: 920px;
     }
 }
 
