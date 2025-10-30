@@ -132,12 +132,14 @@ const selectCard = (card) => {
         max-width: 1200px;
         width: 100%;
         justify-content: center;
-        min-height: 400px;
+        min-height: 300px;
         align-items: center;
         position: relative;
 
         // Одна карта - по центру
         &--one-card {
+            min-height: 250px;
+
             .card-selector__selected-card {
                 &:nth-child(1) {
                     position: relative;
@@ -147,6 +149,8 @@ const selectCard = (card) => {
 
         // Три карты - в линию
         &--three-cards {
+            min-height: 250px;
+
             .card-selector__selected-card {
                 position: relative;
             }
@@ -156,7 +160,7 @@ const selectCard = (card) => {
         &--celtic-cross {
             flex-wrap: wrap;
             justify-content: center;
-            min-height: 600px;
+            min-height: 500px;
 
             .card-selector__selected-card {
                 position: absolute;
@@ -164,65 +168,65 @@ const selectCard = (card) => {
                 // Центральный крест
                 &:nth-child(1) { left: 50%; top: 50%; transform: translate(-50%, -50%); }
                 &:nth-child(2) { left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(90deg); }
-                &:nth-child(3) { left: calc(50% - 220px); top: 50%; transform: translate(-50%, -50%); }
-                &:nth-child(4) { left: calc(50% + 220px); top: 50%; transform: translate(-50%, -50%); }
-                &:nth-child(5) { left: 50%; top: calc(50% - 170px); transform: translate(-50%, -50%); }
-                &:nth-child(6) { left: 50%; top: calc(50% + 170px); transform: translate(-50%, -50%); }
+                &:nth-child(3) { left: calc(50% - 160px); top: 50%; transform: translate(-50%, -50%); }
+                &:nth-child(4) { left: calc(50% + 160px); top: 50%; transform: translate(-50%, -50%); }
+                &:nth-child(5) { left: 50%; top: calc(50% - 120px); transform: translate(-50%, -50%); }
+                &:nth-child(6) { left: 50%; top: calc(50% + 120px); transform: translate(-50%, -50%); }
 
                 // Столбец справа
-                &:nth-child(7) { left: calc(50% + 440px); top: calc(50% - 255px); transform: translate(-50%, -50%); }
-                &:nth-child(8) { left: calc(50% + 440px); top: calc(50% - 85px); transform: translate(-50%, -50%); }
-                &:nth-child(9) { left: calc(50% + 440px); top: calc(50% + 85px); transform: translate(-50%, -50%); }
-                &:nth-child(10) { left: calc(50% + 440px); top: calc(50% + 255px); transform: translate(-50%, -50%); }
+                &:nth-child(7) { left: calc(50% + 320px); top: calc(50% - 180px); transform: translate(-50%, -50%); }
+                &:nth-child(8) { left: calc(50% + 320px); top: calc(50% - 60px); transform: translate(-50%, -50%); }
+                &:nth-child(9) { left: calc(50% + 320px); top: calc(50% + 60px); transform: translate(-50%, -50%); }
+                &:nth-child(10) { left: calc(50% + 320px); top: calc(50% + 180px); transform: translate(-50%, -50%); }
             }
         }
 
         // Подкова - полукруг
         &--horseshoe {
-            min-height: 500px;
+            min-height: 400px;
 
             .card-selector__selected-card {
                 position: absolute;
 
-                &:nth-child(1) { left: calc(50% - 360px); top: 50%; transform: translate(-50%, -50%) rotate(-30deg); }
-                &:nth-child(2) { left: calc(50% - 240px); top: calc(50% - 100px); transform: translate(-50%, -50%) rotate(-20deg); }
-                &:nth-child(3) { left: calc(50% - 120px); top: calc(50% - 140px); transform: translate(-50%, -50%) rotate(-10deg); }
-                &:nth-child(4) { left: 50%; top: calc(50% - 150px); transform: translate(-50%, -50%); }
-                &:nth-child(5) { left: calc(50% + 120px); top: calc(50% - 140px); transform: translate(-50%, -50%) rotate(10deg); }
-                &:nth-child(6) { left: calc(50% + 240px); top: calc(50% - 100px); transform: translate(-50%, -50%) rotate(20deg); }
-                &:nth-child(7) { left: calc(50% + 360px); top: 50%; transform: translate(-50%, -50%) rotate(30deg); }
+                &:nth-child(1) { left: calc(50% - 270px); top: 50%; transform: translate(-50%, -50%) rotate(-30deg); }
+                &:nth-child(2) { left: calc(50% - 180px); top: calc(50% - 75px); transform: translate(-50%, -50%) rotate(-20deg); }
+                &:nth-child(3) { left: calc(50% - 90px); top: calc(50% - 105px); transform: translate(-50%, -50%) rotate(-10deg); }
+                &:nth-child(4) { left: 50%; top: calc(50% - 115px); transform: translate(-50%, -50%); }
+                &:nth-child(5) { left: calc(50% + 90px); top: calc(50% - 105px); transform: translate(-50%, -50%) rotate(10deg); }
+                &:nth-child(6) { left: calc(50% + 180px); top: calc(50% - 75px); transform: translate(-50%, -50%) rotate(20deg); }
+                &:nth-child(7) { left: calc(50% + 270px); top: 50%; transform: translate(-50%, -50%) rotate(30deg); }
             }
         }
 
         // Годовой круг - по кругу (12 карт)
         &--year-circle {
-            min-height: 700px;
+            min-height: 550px;
 
             .card-selector__selected-card {
                 position: absolute;
 
                 // 12 позиций по кругу (начиная с 12 часов)
-                &:nth-child(1) { left: 50%; top: calc(50% - 280px); transform: translate(-50%, -50%); }
-                &:nth-child(2) { left: calc(50% + 140px); top: calc(50% - 242px); transform: translate(-50%, -50%) rotate(30deg); }
-                &:nth-child(3) { left: calc(50% + 242px); top: calc(50% - 140px); transform: translate(-50%, -50%) rotate(60deg); }
-                &:nth-child(4) { left: calc(50% + 280px); top: 50%; transform: translate(-50%, -50%) rotate(90deg); }
-                &:nth-child(5) { left: calc(50% + 242px); top: calc(50% + 140px); transform: translate(-50%, -50%) rotate(120deg); }
-                &:nth-child(6) { left: calc(50% + 140px); top: calc(50% + 242px); transform: translate(-50%, -50%) rotate(150deg); }
-                &:nth-child(7) { left: 50%; top: calc(50% + 280px); transform: translate(-50%, -50%) rotate(180deg); }
-                &:nth-child(8) { left: calc(50% - 140px); top: calc(50% + 242px); transform: translate(-50%, -50%) rotate(210deg); }
-                &:nth-child(9) { left: calc(50% - 242px); top: calc(50% + 140px); transform: translate(-50%, -50%) rotate(240deg); }
-                &:nth-child(10) { left: calc(50% - 280px); top: 50%; transform: translate(-50%, -50%) rotate(270deg); }
-                &:nth-child(11) { left: calc(50% - 242px); top: calc(50% - 140px); transform: translate(-50%, -50%) rotate(300deg); }
-                &:nth-child(12) { left: calc(50% - 140px); top: calc(50% - 242px); transform: translate(-50%, -50%) rotate(330deg); }
+                &:nth-child(1) { left: 50%; top: calc(50% - 210px); transform: translate(-50%, -50%); }
+                &:nth-child(2) { left: calc(50% + 105px); top: calc(50% - 182px); transform: translate(-50%, -50%) rotate(30deg); }
+                &:nth-child(3) { left: calc(50% + 182px); top: calc(50% - 105px); transform: translate(-50%, -50%) rotate(60deg); }
+                &:nth-child(4) { left: calc(50% + 210px); top: 50%; transform: translate(-50%, -50%) rotate(90deg); }
+                &:nth-child(5) { left: calc(50% + 182px); top: calc(50% + 105px); transform: translate(-50%, -50%) rotate(120deg); }
+                &:nth-child(6) { left: calc(50% + 105px); top: calc(50% + 182px); transform: translate(-50%, -50%) rotate(150deg); }
+                &:nth-child(7) { left: 50%; top: calc(50% + 210px); transform: translate(-50%, -50%) rotate(180deg); }
+                &:nth-child(8) { left: calc(50% - 105px); top: calc(50% + 182px); transform: translate(-50%, -50%) rotate(210deg); }
+                &:nth-child(9) { left: calc(50% - 182px); top: calc(50% + 105px); transform: translate(-50%, -50%) rotate(240deg); }
+                &:nth-child(10) { left: calc(50% - 210px); top: 50%; transform: translate(-50%, -50%) rotate(270deg); }
+                &:nth-child(11) { left: calc(50% - 182px); top: calc(50% - 105px); transform: translate(-50%, -50%) rotate(300deg); }
+                &:nth-child(12) { left: calc(50% - 105px); top: calc(50% - 182px); transform: translate(-50%, -50%) rotate(330deg); }
             }
         }
     }
 
     &__selected-card {
-        width: 140px;
-        height: 210px;
+        width: 100px;
+        height: 150px;
         background-color: $color-bg-light;
-        border-radius: 12px;
+        border-radius: 8px;
         box-shadow: 0px 15px 35px 0px rgba(10, 10, 12, 0.3215686274509804);
         display: flex;
         align-items: center;

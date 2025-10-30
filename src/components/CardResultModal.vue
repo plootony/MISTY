@@ -1,8 +1,6 @@
 <script setup>
-import { useCardSelector } from '@/stores/cardSelector.store';
 import { useModalStore } from '@/stores/modal.store';
 
-const cardStore = useCardSelector();
 const modalStore = useModalStore();
 
 const goToNext = () => {
@@ -61,39 +59,8 @@ const closeModal = () => {
 <style scoped lang="scss">
 @use "../assets/scss/vars.scss" as *;
 
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &__overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.8);
-    }
-
-    &__container {
-        position: relative;
-        z-index: 1001;
-        max-width: 90vw;
-        max-height: 90vh;
-        overflow: auto;
-    }
-
-    &__content {
-        background-color: $color-bg-light;
-        box-shadow: 0px 15px 35px 0px rgba(10, 10, 12, 0.3215686274509804);
-        max-width: 920px;
-    }
+.modal__content {
+    max-width: 920px;
 }
 
 .card-result {
