@@ -113,5 +113,5 @@ export const useCardSelector = defineStore('cardSelectorStore', () => {
         }
     ])
 
-    return { spreads }
+    return { deck }
 })
