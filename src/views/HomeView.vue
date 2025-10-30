@@ -33,7 +33,10 @@ const selectCard = (card) => {
             <p class="card-selector__subtitle">Не думай. Доверься судьбе. Просто выбери карту</p>
         </div>
 
-        <div class="card-selector__selected">
+        <div 
+            class="card-selector__selected"
+            :class="'card-selector__selected--' + (modalStore.selectedSpread?.id || 'three-cards')"
+        >
             <div 
                 v-for="index in (modalStore.selectedSpread?.cardsCount || 3)" 
                 :key="index"
@@ -129,11 +132,95 @@ const selectCard = (card) => {
         max-width: 1200px;
         width: 100%;
         justify-content: center;
+        min-height: 400px;
+        align-items: center;
+        position: relative;
+
+        // Одна карта - по центру
+        &--one-card {
+            .card-selector__selected-card {
+                &:nth-child(1) {
+                    position: relative;
+                }
+            }
+        }
+
+        // Три карты - в линию
+        &--three-cards {
+            .card-selector__selected-card {
+                position: relative;
+            }
+        }
+
+        // Кельтский крест - крест + столбец
+        &--celtic-cross {
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 600px;
+
+            .card-selector__selected-card {
+                position: absolute;
+
+                // Центральный крест
+                &:nth-child(1) { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+                &:nth-child(2) { left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(90deg); }
+                &:nth-child(3) { left: calc(50% - 220px); top: 50%; transform: translate(-50%, -50%); }
+                &:nth-child(4) { left: calc(50% + 220px); top: 50%; transform: translate(-50%, -50%); }
+                &:nth-child(5) { left: 50%; top: calc(50% - 170px); transform: translate(-50%, -50%); }
+                &:nth-child(6) { left: 50%; top: calc(50% + 170px); transform: translate(-50%, -50%); }
+
+                // Столбец справа
+                &:nth-child(7) { left: calc(50% + 440px); top: calc(50% - 255px); transform: translate(-50%, -50%); }
+                &:nth-child(8) { left: calc(50% + 440px); top: calc(50% - 85px); transform: translate(-50%, -50%); }
+                &:nth-child(9) { left: calc(50% + 440px); top: calc(50% + 85px); transform: translate(-50%, -50%); }
+                &:nth-child(10) { left: calc(50% + 440px); top: calc(50% + 255px); transform: translate(-50%, -50%); }
+            }
+        }
+
+        // Подкова - полукруг
+        &--horseshoe {
+            min-height: 500px;
+
+            .card-selector__selected-card {
+                position: absolute;
+
+                &:nth-child(1) { left: calc(50% - 360px); top: 50%; transform: translate(-50%, -50%) rotate(-30deg); }
+                &:nth-child(2) { left: calc(50% - 240px); top: calc(50% - 100px); transform: translate(-50%, -50%) rotate(-20deg); }
+                &:nth-child(3) { left: calc(50% - 120px); top: calc(50% - 140px); transform: translate(-50%, -50%) rotate(-10deg); }
+                &:nth-child(4) { left: 50%; top: calc(50% - 150px); transform: translate(-50%, -50%); }
+                &:nth-child(5) { left: calc(50% + 120px); top: calc(50% - 140px); transform: translate(-50%, -50%) rotate(10deg); }
+                &:nth-child(6) { left: calc(50% + 240px); top: calc(50% - 100px); transform: translate(-50%, -50%) rotate(20deg); }
+                &:nth-child(7) { left: calc(50% + 360px); top: 50%; transform: translate(-50%, -50%) rotate(30deg); }
+            }
+        }
+
+        // Годовой круг - по кругу (12 карт)
+        &--year-circle {
+            min-height: 700px;
+
+            .card-selector__selected-card {
+                position: absolute;
+
+                // 12 позиций по кругу (начиная с 12 часов)
+                &:nth-child(1) { left: 50%; top: calc(50% - 280px); transform: translate(-50%, -50%); }
+                &:nth-child(2) { left: calc(50% + 140px); top: calc(50% - 242px); transform: translate(-50%, -50%) rotate(30deg); }
+                &:nth-child(3) { left: calc(50% + 242px); top: calc(50% - 140px); transform: translate(-50%, -50%) rotate(60deg); }
+                &:nth-child(4) { left: calc(50% + 280px); top: 50%; transform: translate(-50%, -50%) rotate(90deg); }
+                &:nth-child(5) { left: calc(50% + 242px); top: calc(50% + 140px); transform: translate(-50%, -50%) rotate(120deg); }
+                &:nth-child(6) { left: calc(50% + 140px); top: calc(50% + 242px); transform: translate(-50%, -50%) rotate(150deg); }
+                &:nth-child(7) { left: 50%; top: calc(50% + 280px); transform: translate(-50%, -50%) rotate(180deg); }
+                &:nth-child(8) { left: calc(50% - 140px); top: calc(50% + 242px); transform: translate(-50%, -50%) rotate(210deg); }
+                &:nth-child(9) { left: calc(50% - 242px); top: calc(50% + 140px); transform: translate(-50%, -50%) rotate(240deg); }
+                &:nth-child(10) { left: calc(50% - 280px); top: 50%; transform: translate(-50%, -50%) rotate(270deg); }
+                &:nth-child(11) { left: calc(50% - 242px); top: calc(50% - 140px); transform: translate(-50%, -50%) rotate(300deg); }
+                &:nth-child(12) { left: calc(50% - 140px); top: calc(50% - 242px); transform: translate(-50%, -50%) rotate(330deg); }
+            }
+        }
     }
 
     &__selected-card {
-        width: 200px;
-        height: 300px;
+        width: 140px;
+        height: 210px;
         background-color: $color-bg-light;
         border-radius: 12px;
         box-shadow: 0px 15px 35px 0px rgba(10, 10, 12, 0.3215686274509804);
@@ -151,21 +238,32 @@ const selectCard = (card) => {
 
     &__deck {
         display: flex;
-        gap: 6px;
         max-width: 1200px;
         width: 100%;
         justify-content: center;
-        flex-wrap: wrap;
+        position: relative;
+        height: 200px;
+        align-items: center;
     }
 
     &__deck-card {
-        width: 70px;
-        height: 105px;
+        width: 120px;
+        height: 180px;
         cursor: pointer;
         transition: transform 0.3s;
+        position: absolute;
+        left: 50%;
 
         &:hover {
-            transform: translateY(-12px);
+            transform: translateX(-50%) translateY(-24px) scale(1.05);
+            z-index: 100;
+        }
+
+        @for $i from 1 through 12 {
+            &:nth-child(#{$i}) {
+                transform: translateX(-50%) translateX(calc((#{$i} - 6.5) * 32px));
+                z-index: #{$i};
+            }
         }
     }
 
