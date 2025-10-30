@@ -5,9 +5,15 @@ import { useModalStore } from '@/stores/modal.store';
 const cardStore = useCardSelector();
 const modalStore = useModalStore();
 
-const goToAnswer = () => {
+const goToNext = () => {
     modalStore.closeCardResultModal();
-    modalStore.openAnswerModal();
+    
+    const maxCards = modalStore.selectedSpread?.cardsCount || 3;
+    const isAllCardsSelected = modalStore.selectedCards.length === maxCards;
+    
+    if (isAllCardsSelected) {
+        modalStore.openAnswerModal();
+    }
 };
 
 const closeModal = () => {
@@ -44,7 +50,7 @@ const closeModal = () => {
                             </p>
                         </div>
 
-                        <button class="btn btn--primary" @click="goToAnswer">Далее</button>
+                        <button class="btn btn--primary" @click="goToNext">Далее</button>
                     </div>
                 </div>
             </div>

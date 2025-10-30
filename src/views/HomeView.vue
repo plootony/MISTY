@@ -1,10 +1,10 @@
 <script setup>
-import { watch } from 'vue';
 import { useUserStore } from '@/stores/user.store';
 import { useCardSelector } from '@/stores/cardSelector.store';
 import { useModalStore } from '@/stores/modal.store';
 import CardResultModal from '@/components/CardResultModal.vue';
 import AnswerModal from '@/components/AnswerModal.vue';
+import CardLoader from '@/components/CardLoader.vue';
 
 const userStore = useUserStore();
 const cardStore = useCardSelector();
@@ -12,17 +12,16 @@ const modalStore = useModalStore();
 
 const selectCard = (card) => {
     const maxCards = modalStore.selectedSpread?.cardsCount || 3;
-    if (modalStore.selectedCards.length < maxCards) {
+    if (modalStore.selectedCards.length < maxCards && !modalStore.isLoading) {
         modalStore.addSelectedCard(card);
+        modalStore.startLoading();
+
+        setTimeout(() => {
+            modalStore.stopLoading();
+            modalStore.openCardResultModal();
+        }, 2000);
     }
 };
-
-watch(() => modalStore.selectedCards.length, (newLength) => {
-    const maxCards = modalStore.selectedSpread?.cardsCount || 3;
-    if (newLength === maxCards) {
-        modalStore.openCardResultModal();
-    }
-});
 </script>
 
 <template>
@@ -62,6 +61,13 @@ watch(() => modalStore.selectedCards.length, (newLength) => {
                     src="@/assets/images/card-back.png" 
                     alt="Карта Таро"
                 >
+            </div>
+        </div>
+
+        <div v-if="modalStore.isLoading" class="card-selector__loader">
+            <div class="card-selector__loader-overlay"></div>
+            <div class="card-selector__loader-content">
+                <CardLoader />
             </div>
         </div>
 
@@ -169,6 +175,32 @@ watch(() => modalStore.selectedCards.length, (newLength) => {
         object-fit: cover;
         border-radius: 6px;
         box-shadow: 0px 5px 15px 0px rgba(10, 10, 12, 0.5);
+    }
+
+    &__loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &__loader-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+
+    &__loader-content {
+        position: relative;
+        z-index: 1001;
     }
 }
 </style>

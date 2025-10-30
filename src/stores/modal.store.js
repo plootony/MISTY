@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 export const useModalStore = defineStore('modalStore', () => {
     const isCardResultModalOpen = ref(false)
     const isAnswerModalOpen = ref(false)
+    const isLoading = ref(false)
     const selectedCards = ref([])
     const selectedSpread = ref(null)
     const userQuestion = ref('')
@@ -30,17 +31,27 @@ export const useModalStore = defineStore('modalStore', () => {
         }
     }
 
+    const startLoading = () => {
+        isLoading.value = true
+    }
+
+    const stopLoading = () => {
+        isLoading.value = false
+    }
+
     const resetSelection = () => {
         selectedCards.value = []
         selectedSpread.value = null
         userQuestion.value = ''
         isCardResultModalOpen.value = false
         isAnswerModalOpen.value = false
+        isLoading.value = false
     }
 
     return {
         isCardResultModalOpen,
         isAnswerModalOpen,
+        isLoading,
         selectedCards,
         selectedSpread,
         userQuestion,
@@ -49,6 +60,8 @@ export const useModalStore = defineStore('modalStore', () => {
         openAnswerModal,
         closeAnswerModal,
         addSelectedCard,
+        startLoading,
+        stopLoading,
         resetSelection
     }
 })
