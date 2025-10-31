@@ -66,9 +66,24 @@ const historyItems = ref([
 ]);
 
 const activeAccordion = ref(null);
+const activeCardAccordions = ref({});
 
 const toggleAccordion = (id) => {
     activeAccordion.value = activeAccordion.value === id ? null : id;
+};
+
+const toggleCardAccordion = (itemId, cardIndex) => {
+    const key = `${itemId}-${cardIndex}`;
+    if (activeCardAccordions.value[key]) {
+        delete activeCardAccordions.value[key];
+    } else {
+        activeCardAccordions.value[key] = true;
+    }
+};
+
+const isCardAccordionActive = (itemId, cardIndex) => {
+    const key = `${itemId}-${cardIndex}`;
+    return !!activeCardAccordions.value[key];
 };
 
 const enableEditMode = () => {
@@ -211,13 +226,35 @@ const cancelEdit = () => {
                                         v-for="(card, index) in item.cards" 
                                         :key="index"
                                         class="card-detail"
+                                        :class="{ 'card-detail--active': isCardAccordionActive(item.id, index) }"
                                     >
-                                        <div class="card-detail__header">
-                                            <span class="card-detail__number">{{ index + 1 }}</span>
-                                            <span class="card-detail__name">{{ card.name }}</span>
-                                            <span class="card-detail__position">{{ card.position }}</span>
+                                        <button 
+                                            type="button"
+                                            class="card-detail__toggle"
+                                            @click="toggleCardAccordion(item.id, index)"
+                                        >
+                                            <div class="card-detail__card">
+                                                <img 
+                                                    class="card-detail__card-image" 
+                                                    src="@/assets/images/card-back.png" 
+                                                    alt="Карта Таро"
+                                                >
+                                            </div>
+                                            <div class="card-detail__summary">
+                                                <span class="card-detail__name">{{ card.name }}</span>
+                                                <span class="card-detail__position">{{ card.position }}</span>
+                                            </div>
+                                            <span class="card-detail__icon">
+                                                {{ isCardAccordionActive(item.id, index) ? '−' : '+' }}
+                                            </span>
+                                        </button>
+                                        
+                                        <div 
+                                            v-if="isCardAccordionActive(item.id, index)"
+                                            class="card-detail__description-wrapper"
+                                        >
+                                            <p class="card-detail__description">{{ card.description }}</p>
                                         </div>
-                                        <p class="card-detail__description">{{ card.description }}</p>
                                     </div>
                                 </div>
 
@@ -231,6 +268,25 @@ const cancelEdit = () => {
                         <p v-if="historyItems.length === 0" class="profile__empty">
                             У вас пока нет гаданий
                         </p>
+                    </div>
+
+                    <!-- Пагинация -->
+                    <div v-if="historyItems.length > 0" class="pagination">
+                        <button class="pagination__btn pagination__btn--prev" disabled>
+                            ← Назад
+                        </button>
+                        
+                        <div class="pagination__pages">
+                            <button class="pagination__page pagination__page--active">1</button>
+                            <button class="pagination__page">2</button>
+                            <button class="pagination__page">3</button>
+                            <span class="pagination__dots">...</span>
+                            <button class="pagination__page">10</button>
+                        </div>
+                        
+                        <button class="pagination__btn pagination__btn--next">
+                            Вперёд →
+                        </button>
                     </div>
                 </section>
             </div>
@@ -405,6 +461,7 @@ const cancelEdit = () => {
         display: flex;
         flex-direction: column;
         gap: $spacing-middle;
+        margin-bottom: $spacing-large;
     }
 
     &__empty {
@@ -413,6 +470,76 @@ const cancelEdit = () => {
         color: $color-grey;
         text-align: center;
         padding: $spacing-large;
+    }
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-middle;
+    padding-top: $spacing-middle;
+    border-top: 1px solid rgba($color-grey, 0.2);
+
+    &__btn {
+        padding: $spacing-small $spacing-middle;
+        font-family: "Inter", Sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: $color-white;
+        background-color: $color-bg-dark;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: border-color 0.3s;
+
+        &:hover:not(:disabled) {
+            border-color: $color-pastel-orange;
+        }
+
+        &:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    }
+
+    &__pages {
+        display: flex;
+        align-items: center;
+        gap: $spacing-x-smal;
+    }
+
+    &__page {
+        min-width: 40px;
+        height: 40px;
+        padding: $spacing-x-smal;
+        font-family: "Inter", Sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: $color-white;
+        background-color: $color-bg-dark;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: border-color 0.3s, background-color 0.3s;
+
+        &:hover {
+            border-color: $color-pastel-orange;
+        }
+
+        &--active {
+            background-color: $color-pastel-orange;
+            color: $color-bg-dark;
+
+            &:hover {
+                border-color: transparent;
+            }
+        }
+    }
+
+    &__dots {
+        font-family: "Inter", Sans-serif;
+        font-size: 14px;
+        color: $color-grey;
+        padding: 0 $spacing-x-smal;
     }
 }
 
@@ -435,11 +562,6 @@ const cancelEdit = () => {
         align-items: center;
         gap: $spacing-middle;
         cursor: pointer;
-        transition: background-color 0.3s;
-
-        &:hover {
-            background-color: rgba($color-bg-light, 0.5);
-        }
     }
 
     &__preview {
@@ -533,28 +655,55 @@ const cancelEdit = () => {
 
 .card-detail {
     background-color: $color-bg-light;
-    padding: $spacing-middle;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
 
-    &__header {
-        display: flex;
-        align-items: center;
-        gap: $spacing-small;
-        margin-bottom: $spacing-x-smal;
+    &--active {
+        border-color: $color-pastel-orange;
     }
 
-    &__number {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        background-color: $color-pastel-orange;
-        color: $color-bg-dark;
+    &__toggle {
+        width: 100%;
+        padding: $spacing-middle;
+        background: none;
+        border: none;
+        display: flex;
+        gap: $spacing-middle;
+        align-items: center;
+        cursor: pointer;
+        transition: background-color 0.3s;
+
+        &:hover {
+            background-color: rgba($color-bg-dark, 0.3);
+        }
+    }
+
+    &__card {
+        width: 60px;
+        height: 90px;
+        flex-shrink: 0;
+        background-color: $color-bg-dark;
+        border-radius: 4px;
+        box-shadow: 0px 2px 8px 0px rgba(10, 10, 12, 0.5);
+        overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-family: "Inter", Sans-serif;
-        font-size: 13px;
-        font-weight: 700;
-        flex-shrink: 0;
+    }
+
+    &__card-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    &__summary {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: $spacing-x-smal;
+        text-align: left;
     }
 
     &__name {
@@ -568,14 +717,29 @@ const cancelEdit = () => {
         font-family: "Inter", Sans-serif;
         font-size: 13px;
         color: $color-grey;
-        margin-left: auto;
+    }
+
+    &__icon {
+        font-size: 28px;
+        color: $color-white;
+        flex-shrink: 0;
+        transition: transform 0.3s;
+    }
+
+    &--active &__icon {
+        transform: rotate(180deg);
+    }
+
+    &__description-wrapper {
+        padding: 0 $spacing-middle $spacing-middle;
+        padding-left: calc(60px + $spacing-middle * 2);
     }
 
     &__description {
         font-family: "Inter", Sans-serif;
         font-size: 15px;
-        line-height: 1.5;
-        color: $color-grey;
+        line-height: 1.6;
+        color: $color-white;
         margin: 0;
     }
 }
