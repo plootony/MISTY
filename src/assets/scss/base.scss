@@ -44,4 +44,21 @@ body {
             cursor: pointer;
         }
     }
+
+    &--secondary {
+        padding: $spacing-middle $spacing-large;
+        font-family: "DM Sans", Sans-serif;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        color: $color-white;
+        background-color: transparent;
+        border: 2px solid $color-grey;
+        transition: border-color .3s, color .3s;
+
+        &:hover {
+            border-color: $color-white;
+            cursor: pointer;
+        }
+    }
 }

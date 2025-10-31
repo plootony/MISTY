@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router';
 import { useSpreadSelector } from '@/stores/spreadSelector.store';
 import { useUserStore } from '@/stores/user.store';
 import { useModalStore } from '@/stores/modal.store';
+import SpreadPreview from '@/components/SpreadPreview.vue';
 
 const router = useRouter();
 const spreadStore = useSpreadSelector();
@@ -30,11 +31,16 @@ const selectSpread = (spread) => {
                 class="spread-selector__card"
                 @click="selectSpread(spread)"
             >
-                <img :src="spread.image" :alt="spread.name" class="spread-selector__card-image">
+                <div class="spread-selector__card-preview">
+                    <SpreadPreview 
+                        :spread-id="spread.id" 
+                        :cards-count="spread.cardsCount"
+                    />
+                </div>
                 <div class="spread-selector__card-body">
                     <strong class="spread-selector__card-title">{{ spread.name }}</strong>
                     <p class="spread-selector__card-subtitle">{{ spread.description }}</p>
-                    <span class="spread-selector__card-link">Learn more →</span>
+                    <span class="spread-selector__card-link">Выбрать →</span>
                 </div>
             </div>
         </div>
@@ -83,8 +89,8 @@ const selectSpread = (spread) => {
     }
 
     &__grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        display: flex;
+        flex-wrap: wrap;
         gap: $spacing-middle;
         max-width: 1200px;
         width: 100%;
@@ -93,23 +99,31 @@ const selectSpread = (spread) => {
     &__card {
         padding: $spacing-middle;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: $spacing-small;
+        gap: $spacing-middle;
         font-family: "Playfair Display", Sans-serif;
         background-color: $color-bg-light;
         box-shadow: 0px 15px 35px 0px rgba(10, 10, 12, 0.3215686274509804);
         cursor: pointer;
-        transition: outline 0.3s;
+        flex: 1 1 calc(33.333% - $spacing-middle);
+        min-width: 320px;
 
         &:hover {
             outline: 2px solid $color-orange;
         }
     }
 
-    &__card-image {
-        width: 80px;
-        height: auto;
-        border-radius: 2px;
+    &__card-preview {
+        width: 100%;
+        min-height: 140px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: $color-bg-dark;
+        border-radius: 4px;
+        padding: $spacing-middle;
     }
 
     &__card-body {
