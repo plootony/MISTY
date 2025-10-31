@@ -14,6 +14,9 @@ const modalStore = useModalStore();
 const hoveredSpreadId = ref(null);
 
 const selectSpread = (spread) => {
+    if (!userStore.canAccessSpread(spread.id)) {
+        return;
+    }
     modalStore.selectedSpread = spread;
     router.push('/question');
 };
@@ -40,6 +43,7 @@ const onMouseLeave = () => {
                 v-for="spread in spreadStore.spreads" 
                 :key="spread.id" 
                 class="spread-selector__card"
+                :class="{ 'spread-selector__card--disabled': !userStore.canAccessSpread(spread.id) }"
                 @click="selectSpread(spread)"
                 @mouseenter="onMouseEnter(spread.id)"
                 @mouseleave="onMouseLeave"
@@ -48,13 +52,29 @@ const onMouseLeave = () => {
                     <SpreadPreview 
                         :spread-id="spread.id" 
                         :cards-count="spread.cardsCount"
-                        :animated="hoveredSpreadId === spread.id"
+                        :animated="hoveredSpreadId === spread.id && userStore.canAccessSpread(spread.id)"
                     />
+                    
+                    <!-- Overlay для заблокированных раскладов -->
+                    <div v-if="!userStore.canAccessSpread(spread.id)" class="spread-selector__card-overlay">
+                        <div class="spread-selector__card-lock">
+                            <span class="spread-selector__card-lock-icon">🔒</span>
+                            <span class="spread-selector__card-lock-text">
+                                Доступно на уровне<br>"{{ userStore.getRequiredTariffForSpread(spread.id)?.name }}"
+                            </span>
+                        </div>
+                    </div>
                 </div>
+                
                 <div class="spread-selector__card-body">
                     <strong class="spread-selector__card-title">{{ spread.name }}</strong>
                     <p class="spread-selector__card-subtitle">{{ spread.description }}</p>
-                    <span class="spread-selector__card-link">Выбрать →</span>
+                    <span 
+                        v-if="userStore.canAccessSpread(spread.id)"
+                        class="spread-selector__card-link"
+                    >
+                        Выбрать →
+                    </span>
                 </div>
             </div>
         </div>
@@ -123,10 +143,20 @@ const onMouseLeave = () => {
         flex: 1 1 calc(33.333% - $spacing-middle);
         min-width: 320px;
         outline: 2px solid transparent;
-        transition: outline 0.3s;
+        transition: outline 0.3s, opacity 0.3s;
+        position: relative;
 
-        &:hover {
+        &:hover:not(&--disabled) {
             outline-color: $color-orange;
+        }
+
+        &--disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+
+            .spread-selector__card-preview {
+                filter: grayscale(50%);
+            }
         }
     }
 
@@ -140,6 +170,22 @@ const onMouseLeave = () => {
         background-color: $color-bg-dark;
         border-radius: 4px;
         padding: $spacing-middle;
+        position: relative;
+    }
+
+    &__card-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba($color-bg-dark, 0.85);
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        z-index: 10;
     }
 
     &__card-body {
@@ -166,6 +212,31 @@ const onMouseLeave = () => {
         font-size: 14px;
         text-transform: uppercase;
         color: $color-pastel-orange;
+    }
+
+    &__card-lock {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: $spacing-small;
+        padding: $spacing-middle;
+    }
+
+    &__card-lock-icon {
+        font-size: 32px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    &__card-lock-text {
+        font-family: "Inter", Sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: $color-white;
+        text-align: center;
+        letter-spacing: 0.5px;
+        line-height: 1.4;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
 }
 </style>

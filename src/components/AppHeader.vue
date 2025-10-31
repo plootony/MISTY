@@ -15,7 +15,10 @@ const userStore = useUserStore();
             <nav class="header__nav">
                 <RouterLink to="/" class="header__link">Главная</RouterLink>
                 <RouterLink to="/profile" class="header__link header__link--profile">
-                    <span class="header__user-name">{{ userStore.userData.name }}</span>
+                    <div class="header__user-info">
+                        <span class="header__user-name">{{ userStore.userData.name }}</span>
+                        <span class="header__tariff">{{ userStore.currentTariff.name }}</span>
+                    </div>
                     <span class="header__profile-icon">👤</span>
                 </RouterLink>
             </nav>
@@ -91,7 +94,7 @@ const userStore = useUserStore();
         &--profile {
             display: flex;
             align-items: center;
-            gap: $spacing-x-smal;
+            gap: $spacing-small;
             padding: $spacing-x-smal $spacing-middle;
             background-color: $color-bg-dark;
             border: 2px solid transparent;
@@ -107,8 +110,24 @@ const userStore = useUserStore();
         }
     }
 
+    &__user-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+    }
+
     &__user-name {
         color: $color-white;
+        font-size: 15px;
+    }
+
+    &__tariff {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: $color-pastel-orange;
+        letter-spacing: 0.5px;
     }
 
     &__profile-icon {

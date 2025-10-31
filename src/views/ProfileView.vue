@@ -127,7 +127,10 @@ const cancelEdit = () => {
                         <div class="profile__info">
                             <div class="profile__info-item">
                                 <span class="profile__info-label">Имя</span>
-                                <span class="profile__info-value">{{ userStore.userData.name }}</span>
+                                <div class="profile__info-value-wrapper">
+                                    <span class="profile__info-value">{{ userStore.userData.name }}</span>
+                                    <span class="profile__tariff-badge">{{ userStore.currentTariff.name }}</span>
+                                </div>
                             </div>
 
                             <div class="profile__info-item">
@@ -398,11 +401,31 @@ const cancelEdit = () => {
         letter-spacing: 0.5px;
     }
 
+    &__info-value-wrapper {
+        display: flex;
+        align-items: center;
+        gap: $spacing-small;
+        flex-wrap: wrap;
+    }
+
     &__info-value {
         font-family: "Playfair Display", Sans-serif;
         font-size: 20px;
         font-weight: 500;
         color: $color-white;
+    }
+
+    &__tariff-badge {
+        display: inline-flex;
+        padding: 4px $spacing-small;
+        background-color: $color-pastel-orange;
+        color: $color-bg-dark;
+        font-family: "Inter", Sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 4px;
     }
 
     &__edit-btn {
