@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSpreadSelector } from '@/stores/spreadSelector.store';
 import { useUserStore } from '@/stores/user.store';
@@ -10,9 +11,19 @@ const spreadStore = useSpreadSelector();
 const userStore = useUserStore();
 const modalStore = useModalStore();
 
+const hoveredSpreadId = ref(null);
+
 const selectSpread = (spread) => {
     modalStore.selectedSpread = spread;
     router.push('/question');
+};
+
+const onMouseEnter = (spreadId) => {
+    hoveredSpreadId.value = spreadId;
+};
+
+const onMouseLeave = () => {
+    hoveredSpreadId.value = null;
 };
 </script>
 
@@ -30,11 +41,14 @@ const selectSpread = (spread) => {
                 :key="spread.id" 
                 class="spread-selector__card"
                 @click="selectSpread(spread)"
+                @mouseenter="onMouseEnter(spread.id)"
+                @mouseleave="onMouseLeave"
             >
                 <div class="spread-selector__card-preview">
                     <SpreadPreview 
                         :spread-id="spread.id" 
                         :cards-count="spread.cardsCount"
+                        :animated="hoveredSpreadId === spread.id"
                     />
                 </div>
                 <div class="spread-selector__card-body">
@@ -108,9 +122,11 @@ const selectSpread = (spread) => {
         cursor: pointer;
         flex: 1 1 calc(33.333% - $spacing-middle);
         min-width: 320px;
+        outline: 2px solid transparent;
+        transition: outline 0.3s;
 
         &:hover {
-            outline: 2px solid $color-orange;
+            outline-color: $color-orange;
         }
     }
 

@@ -9,10 +9,20 @@ const props = defineProps({
     cardsCount: {
         type: Number,
         required: true
+    },
+    animated: {
+        type: Boolean,
+        default: false
     }
 });
 
-const spreadClass = computed(() => `spread-preview--${props.spreadId}`);
+const spreadClass = computed(() => {
+    const classes = [`spread-preview--${props.spreadId}`];
+    if (props.animated) {
+        classes.push('spread-preview--animated');
+    }
+    return classes.join(' ');
+});
 </script>
 
 <template>
@@ -60,6 +70,25 @@ const spreadClass = computed(() => `spread-preview--${props.spreadId}`);
         width: 100%;
         height: 100%;
         object-fit: cover;
+    }
+
+    // Анимация при наведении
+    &--animated {
+        .spread-preview__card {
+            // Все карты вылетают из центра на свои места
+            &:nth-child(1) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0s; }
+            &:nth-child(2) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.05s; }
+            &:nth-child(3) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.1s; }
+            &:nth-child(4) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.15s; }
+            &:nth-child(5) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.2s; }
+            &:nth-child(6) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.25s; }
+            &:nth-child(7) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.3s; }
+            &:nth-child(8) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.35s; }
+            &:nth-child(9) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.4s; }
+            &:nth-child(10) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.45s; }
+            &:nth-child(11) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.5s; }
+            &:nth-child(12) { animation: shuffleCard 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.55s; }
+        }
     }
 
     // Одна карта - по центру
@@ -149,6 +178,25 @@ const spreadClass = computed(() => `spread-preview--${props.spreadId}`);
             &:nth-child(11) { left: calc(50% - 55px); top: calc(50% - 32px); transform: translate(-50%, -50%) rotate(300deg); }
             &:nth-child(12) { left: calc(50% - 32px); top: calc(50% - 55px); transform: translate(-50%, -50%) rotate(330deg); }
         }
+    }
+}
+
+@keyframes shuffleCard {
+    0% {
+        opacity: 0;
+        transform: scale(0.3) rotate(0deg);
+    }
+    40% {
+        opacity: 0.7;
+        transform: scale(0.5) rotate(5deg);
+    }
+    70% {
+        opacity: 1;
+        transform: scale(1.05) rotate(-3deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
     }
 }
 </style>
