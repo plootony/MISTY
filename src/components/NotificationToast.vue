@@ -98,6 +98,7 @@ const close = () => {
         line-height: 1.5;
         color: $color-white;
         margin: 0;
+        white-space: pre-line; // Поддержка переносов строк
     }
 
     &__close {

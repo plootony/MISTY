@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user.store';
 import { useModalStore } from '@/stores/modal.store';
+import { validateTarotQuestion } from '@/services/mistral.service';
 import NotificationToast from '@/components/NotificationToast.vue';
 import ButtonSpinner from '@/components/ButtonSpinner.vue';
 
@@ -11,6 +12,7 @@ const userStore = useUserStore();
 const modalStore = useModalStore();
 const question = ref('');
 const isLoading = ref(false);
+const isValidating = ref(false);
 
 const notification = ref({
     show: false,
@@ -18,10 +20,8 @@ const notification = ref({
     message: ''
 });
 
-// Список запрещенных слов (можно расширить)
-const forbiddenWords = ['дурак', 'идиот', 'тупой', 'урод', 'мразь'];
-
-const validateQuestion = (text) => {
+// Базовая клиентская валидация (быстрая проверка перед AI)
+const basicValidation = (text) => {
     // Проверка на пустой вопрос
     if (!text.trim()) {
         return {
@@ -35,16 +35,6 @@ const validateQuestion = (text) => {
         return {
             valid: false,
             message: 'Вопрос слишком короткий. Минимум 10 символов'
-        };
-    }
-
-    // Проверка на оскорбительные слова
-    const lowerText = text.toLowerCase();
-    const foundForbidden = forbiddenWords.find(word => lowerText.includes(word));
-    if (foundForbidden) {
-        return {
-            valid: false,
-            message: 'Вопрос содержит недопустимые выражения. Пожалуйста, перефразируйте'
         };
     }
 
@@ -79,21 +69,52 @@ const closeNotification = () => {
 };
 
 const submitQuestion = async () => {
-    const validation = validateQuestion(question.value);
+    // Сначала базовая валидация
+    const basicCheck = basicValidation(question.value);
     
-    if (!validation.valid) {
-        showNotification('error', validation.message);
+    if (!basicCheck.valid) {
+        showNotification('error', basicCheck.message);
         return;
     }
 
+    // Затем AI валидация
+    isValidating.value = true;
     isLoading.value = true;
 
-    // Имитация проверки вопроса на сервере (можно заменить на реальный API запрос)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+        const aiValidation = await validateTarotQuestion(question.value);
+        
+        if (!aiValidation.isValid) {
+            isValidating.value = false;
+            isLoading.value = false;
+            
+            // Формируем сообщение с причиной и предложением
+            let errorMessage = aiValidation.reason || 'Вопрос не подходит для гадания на Таро';
+            if (aiValidation.suggestion) {
+                errorMessage += `\n\nПопробуйте переформулировать: ${aiValidation.suggestion}`;
+            }
+            
+            showNotification('warning', errorMessage);
+            return;
+        }
 
-    isLoading.value = false;
-    modalStore.userQuestion = question.value;
-    router.push('/card-selection');
+        // Если есть ошибка API, но валидация прошла (fallback)
+        if (aiValidation.error) {
+            console.warn('AI валидация недоступна, используем fallback');
+        }
+
+        // Вопрос валиден, переходим к выбору карт
+        isValidating.value = false;
+        isLoading.value = false;
+        modalStore.userQuestion = question.value;
+        router.push('/card-selection');
+
+    } catch (error) {
+        console.error('Ошибка при валидации вопроса:', error);
+        isValidating.value = false;
+        isLoading.value = false;
+        showNotification('error', 'Произошла ошибка. Попробуйте еще раз.');
+    }
 };
 </script>
 
@@ -122,13 +143,18 @@ const submitQuestion = async () => {
                 :disabled="isLoading"
             ></textarea>
             
+            <div v-if="isValidating" class="question__validation-status">
+                <ButtonSpinner />
+                <span class="question__validation-text">Проверяю вопрос с помощью мистических сил...</span>
+            </div>
+            
             <button 
                 class="btn btn--primary" 
                 @click="submitQuestion"
                 :disabled="isLoading"
             >
-                <ButtonSpinner v-if="isLoading" />
-                <span>Задать вопрос</span>
+                <ButtonSpinner v-if="isLoading && !isValidating" />
+                <span>{{ isValidating ? 'Проверка вопроса...' : 'Задать вопрос' }}</span>
             </button>
         </div>
     </div>
@@ -215,6 +241,34 @@ const submitQuestion = async () => {
             opacity: 0.6;
             cursor: not-allowed;
         }
+    }
+
+    &__validation-status {
+        display: flex;
+        align-items: center;
+        gap: $spacing-small;
+        padding: $spacing-small;
+        background-color: rgba($color-pastel-orange, 0.1);
+        border-left: 3px solid $color-pastel-orange;
+        animation: fadeIn 0.3s ease-in;
+    }
+
+    &__validation-text {
+        font-family: "Inter", Sans-serif;
+        font-size: 14px;
+        color: $color-pastel-orange;
+        font-style: italic;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
