@@ -68,6 +68,12 @@ const closeNotification = () => {
     notification.value.show = false;
 };
 
+const goBack = () => {
+    // Очищаем вопрос при возврате к выбору расклада
+    modalStore.userQuestion = '';
+    router.push('/');
+};
+
 const submitQuestion = async () => {
     // Сначала базовая валидация
     const basicCheck = basicValidation(question.value);
@@ -148,14 +154,24 @@ const submitQuestion = async () => {
                 <span class="question__validation-text">Проверяю вопрос с помощью мистических сил...</span>
             </div>
             
-            <button 
-                class="btn btn--primary" 
-                @click="submitQuestion"
-                :disabled="isLoading"
-            >
-                <ButtonSpinner v-if="isLoading && !isValidating" />
-                <span>{{ isValidating ? 'Проверка вопроса...' : 'Задать вопрос' }}</span>
-            </button>
+            <div class="question__actions">
+                <button 
+                    class="btn btn--secondary" 
+                    @click="goBack"
+                    :disabled="isLoading"
+                >
+                    ← Назад
+                </button>
+                
+                <button 
+                    class="btn btn--primary" 
+                    @click="submitQuestion"
+                    :disabled="isLoading"
+                >
+                    <ButtonSpinner v-if="isLoading && !isValidating" />
+                    <span>{{ isValidating ? 'Проверка вопроса...' : 'Задать вопрос' }}</span>
+                </button>
+            </div>
         </div>
     </div>
 </template>
@@ -258,6 +274,13 @@ const submitQuestion = async () => {
         font-size: 14px;
         color: $color-pastel-orange;
         font-style: italic;
+    }
+
+    &__actions {
+        display: flex;
+        gap: $spacing-middle;
+        width: 100%;
+        justify-content: space-between;
     }
 }
 

@@ -39,7 +39,7 @@ const userStore = useUserStore();
     &__container {
         max-width: 1440px;
         margin: 0 auto;
-        padding: $spacing-middle $spacing-large;
+        padding: $spacing-small;
         display: flex;
         justify-content: space-between;
         align-items: center;

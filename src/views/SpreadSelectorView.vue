@@ -86,7 +86,7 @@ const onMouseLeave = () => {
 
 .spread-selector {
     min-height: 100vh;
-    padding: $spacing-large $spacing-middle;
+    padding: $spacing-middle;
     display: flex;
     flex-direction: column;
     align-items: center;
