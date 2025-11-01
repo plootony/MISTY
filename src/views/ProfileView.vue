@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user.store';
-import { getReadings } from '@/services/supabase.service';
+import { getReadings, deleteReading, deleteReadings, deleteAllReadings } from '@/services/supabase.service';
 import SpreadPreview from '@/components/SpreadPreview.vue';
 import ButtonSpinner from '@/components/ButtonSpinner.vue';
 
@@ -21,6 +21,22 @@ const isLoadingMore = ref(false);
 // Пагинация
 const itemsPerPage = 5;
 const hasMore = ref(true);
+
+// Удаление записей
+const selectedReadings = ref([]);
+const isDeleting = ref(false);
+
+// Проверка, выбраны ли все записи
+const allSelected = computed({
+    get: () => historyItems.value.length > 0 && selectedReadings.value.length === historyItems.value.length,
+    set: (value) => {
+        if (value) {
+            selectedReadings.value = historyItems.value.map(item => item.id);
+        } else {
+            selectedReadings.value = [];
+        }
+    }
+});
 
 // Загружаем историю при монтировании компонента
 onMounted(async () => {
@@ -117,6 +133,62 @@ const cancelEdit = () => {
     name.value = userStore.userData?.name || '';
     birthDate.value = userStore.userData?.birth || '';
     isEditMode.value = false;
+};
+
+// Удаление выбранных записей
+const deleteSelectedReadings = async () => {
+    if (selectedReadings.value.length === 0) return;
+    
+    const confirmMessage = selectedReadings.value.length === 1
+        ? 'Вы уверены, что хотите удалить эту запись?'
+        : `Вы уверены, что хотите удалить выбранные записи (${selectedReadings.value.length})?`;
+    
+    if (!confirm(confirmMessage)) return;
+    
+    isDeleting.value = true;
+    try {
+        await deleteReadings(selectedReadings.value);
+        
+        // Удаляем из локального массива
+        historyItems.value = historyItems.value.filter(
+            item => !selectedReadings.value.includes(item.id)
+        );
+        
+        // Очищаем выбор
+        selectedReadings.value = [];
+        
+        // Если записей стало мало, подгружаем еще
+        if (historyItems.value.length < itemsPerPage && hasMore.value) {
+            await loadHistory(true);
+        }
+    } catch (error) {
+        console.error('Ошибка удаления записей:', error);
+        alert('Не удалось удалить записи');
+    } finally {
+        isDeleting.value = false;
+    }
+};
+
+// Удаление всех записей
+const deleteAllHistory = async () => {
+    if (historyItems.value.length === 0) return;
+    
+    if (!confirm('Вы уверены, что хотите удалить ВСЮ историю гаданий? Это действие необратимо!')) return;
+    
+    isDeleting.value = true;
+    try {
+        await deleteAllReadings(userStore.userData.id);
+        
+        // Очищаем локальные данные
+        historyItems.value = [];
+        selectedReadings.value = [];
+        hasMore.value = false;
+    } catch (error) {
+        console.error('Ошибка удаления всей истории:', error);
+        alert('Не удалось удалить историю');
+    } finally {
+        isDeleting.value = false;
+    }
 };
 
 const handleSignOut = async () => {
@@ -220,7 +292,41 @@ const handleSignOut = async () => {
 
                 <!-- История запросов -->
                 <section class="profile__section">
-                    <h2 class="profile__section-title">История гаданий</h2>
+                    <div class="profile__history-header">
+                        <h2 class="profile__section-title">История гаданий</h2>
+                        
+                        <!-- Панель управления удалением -->
+                        <div v-if="historyItems.length > 0" class="profile__history-controls">
+                            <label class="profile__checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    v-model="allSelected"
+                                    class="profile__checkbox"
+                                >
+                                <span>Выбрать все</span>
+                            </label>
+                            
+                            <button 
+                                v-if="selectedReadings.length > 0"
+                                type="button"
+                                class="btn btn--danger btn--small"
+                                @click="deleteSelectedReadings"
+                                :disabled="isDeleting"
+                            >
+                                <ButtonSpinner v-if="isDeleting" />
+                                <span v-else>Удалить выбранные ({{ selectedReadings.length }})</span>
+                            </button>
+                            
+                            <button 
+                                type="button"
+                                class="btn btn--danger btn--small"
+                                @click="deleteAllHistory"
+                                :disabled="isDeleting"
+                            >
+                                Удалить всё
+                            </button>
+                        </div>
+                    </div>
                     
                     <!-- Состояние загрузки -->
                     <div v-if="isLoadingHistory" class="profile__history-loading">
@@ -244,6 +350,14 @@ const handleSignOut = async () => {
                             class="history-item"
                             :class="{ 'history-item--active': activeAccordion === item.id }"
                         >
+                            <input 
+                                type="checkbox" 
+                                :value="item.id"
+                                v-model="selectedReadings"
+                                class="history-item__checkbox"
+                                @click.stop
+                            >
+                            
                             <button 
                                 type="button"
                                 class="history-item__header"
@@ -368,6 +482,44 @@ const handleSignOut = async () => {
         font-weight: 600;
         color: $color-white;
         margin-bottom: $spacing-large;
+    }
+
+    &__history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: $spacing-middle;
+        margin-bottom: $spacing-large;
+        flex-wrap: wrap;
+    }
+
+    &__history-controls {
+        display: flex;
+        align-items: center;
+        gap: $spacing-middle;
+        flex-wrap: wrap;
+    }
+
+    &__checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: $spacing-x-smal;
+        font-family: "Inter", Sans-serif;
+        font-size: 14px;
+        color: $color-white;
+        cursor: pointer;
+        user-select: none;
+
+        &:hover {
+            color: $color-pastel-orange;
+        }
+    }
+
+    &__checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: $color-orange;
     }
 
     &__view {
@@ -545,9 +697,24 @@ const handleSignOut = async () => {
     background-color: $color-bg-dark;
     border: 2px solid transparent;
     transition: border-color 0.3s;
+    position: relative;
 
     &--active {
         border-color: $color-pastel-orange;
+    }
+
+    &__checkbox {
+        position: absolute;
+        top: $spacing-small;
+        left: $spacing-small;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: $color-orange;
+        z-index: 10;
+        background-color: $color-bg-light;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     &__header {
@@ -715,6 +882,60 @@ const handleSignOut = async () => {
         line-height: 1.6;
         color: $color-white;
         margin: 0;
+    }
+}
+
+// Кнопки
+.btn {
+    font-family: "Inter", Sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    padding: $spacing-small $spacing-middle;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-x-smal;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    &--primary {
+        background-color: $color-orange;
+        color: $color-white;
+
+        &:hover:not(:disabled) {
+            background-color: $color-pastel-orange;
+        }
+    }
+
+    &--secondary {
+        background-color: transparent;
+        color: $color-white;
+        border: 2px solid $color-grey;
+
+        &:hover:not(:disabled) {
+            border-color: $color-white;
+        }
+    }
+
+    &--danger {
+        background-color: #d32f2f;
+        color: $color-white;
+
+        &:hover:not(:disabled) {
+            background-color: #b71c1c;
+        }
+    }
+
+    &--small {
+        font-size: 13px;
+        padding: $spacing-x-smal $spacing-small;
     }
 }
 </style>

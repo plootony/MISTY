@@ -243,6 +243,51 @@ export async function getReadings(userId, limit = 10, offset = 0) {
     return data
 }
 
+/**
+ * Удаление одной записи гадания
+ */
+export async function deleteReading(readingId) {
+    const { error } = await supabase
+        .from('readings')
+        .delete()
+        .eq('id', readingId)
+    
+    if (error) {
+        console.error('Ошибка удаления гадания:', error)
+        throw error
+    }
+}
+
+/**
+ * Удаление нескольких записей гаданий
+ */
+export async function deleteReadings(readingIds) {
+    const { error } = await supabase
+        .from('readings')
+        .delete()
+        .in('id', readingIds)
+    
+    if (error) {
+        console.error('Ошибка удаления гаданий:', error)
+        throw error
+    }
+}
+
+/**
+ * Удаление всех гаданий пользователя
+ */
+export async function deleteAllReadings(userId) {
+    const { error } = await supabase
+        .from('readings')
+        .delete()
+        .eq('user_id', userId)
+    
+    if (error) {
+        console.error('Ошибка удаления всех гаданий:', error)
+        throw error
+    }
+}
+
 // ============================================
 // ADMIN FUNCTIONS
 // ============================================
