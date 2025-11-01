@@ -1,11 +1,14 @@
 <script setup>
 import { watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { useUserStore } from '@/stores/user.store';
 import AppHeader from '@/components/AppHeader.vue';
 import ProfileSetupModal from '@/components/ProfileSetupModal.vue';
+import ButtonSpinner from '@/components/ButtonSpinner.vue';
 import { useProfileSetup } from '@/composables/useProfileSetup';
 
 const route = useRoute();
+const userStore = useUserStore();
 const { showProfileSetup, checkProfileSetup, handleProfileSetupComplete } = useProfileSetup();
 
 // Проверяем профиль при каждой смене роута
@@ -18,12 +21,50 @@ watch(() => route.path, () => {
 </script>
 
 <template>
-  <AppHeader />
-  <RouterView />
-  
-  <!-- Глобальная модалка настройки профиля -->
-  <ProfileSetupModal 
-    :show="showProfileSetup" 
-    @complete="handleProfileSetupComplete"
-  />
+  <!-- Глобальный индикатор загрузки авторизации -->
+  <div v-if="userStore.isAuthChecking" class="auth-loading">
+    <div class="auth-loading__content">
+      <ButtonSpinner />
+      <p>Загрузка...</p>
+    </div>
+  </div>
+
+  <template v-else>
+    <AppHeader />
+    <RouterView />
+    
+    <!-- Глобальная модалка настройки профиля -->
+    <ProfileSetupModal 
+      :show="showProfileSetup" 
+      @complete="handleProfileSetupComplete"
+    />
+  </template>
 </template>
+
+<style scoped>
+.auth-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: #21212c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.auth-loading__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.auth-loading__content p {
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  color: #b2abb5;
+}
+</style>

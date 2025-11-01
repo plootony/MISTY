@@ -165,13 +165,13 @@ export async function saveReading(userId, readingData) {
 /**
  * Получение истории гаданий пользователя
  */
-export async function getReadings(userId, limit = 10) {
+export async function getReadings(userId, limit = 10, offset = 0) {
     const { data, error } = await supabase
         .from('readings')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(limit)
+        .range(offset, offset + limit - 1)
     
     if (error) {
         console.error('Ошибка получения истории гаданий:', error)

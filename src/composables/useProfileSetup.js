@@ -7,12 +7,8 @@ export function useProfileSetup() {
 
     // Проверяем, нужно ли показывать модалку настройки профиля
     const checkProfileSetup = () => {
-        if (userStore.isAuthenticated) {
-            const needsSetup = !userStore.userData?.birth || !userStore.userData?.name
-            showProfileSetup.value = needsSetup
-            return needsSetup
-        }
-        return false
+        showProfileSetup.value = userStore.needsProfileSetup
+        return userStore.needsProfileSetup
     }
 
     // Следим за изменениями авторизации

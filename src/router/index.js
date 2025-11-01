@@ -47,6 +47,11 @@ router.beforeEach(async (to, from, next) => {
   const modalStore = useModalStore()
   const userStore = useUserStore()
 
+  // Ждем завершения проверки авторизации при первой загрузке
+  if (userStore.isAuthChecking) {
+    await userStore.initAuth()
+  }
+
   // Проверка: требуется аутентификация
   if (to.meta.requiresAuth) {
     // Проверяем через isAuthenticated computed property

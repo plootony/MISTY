@@ -38,7 +38,12 @@ export const useUserStore = defineStore('userStore', () => {
     }
 
     const userData = ref(null)
+    const isAuthChecking = ref(true) // Проверяем сессию при загрузке
     const isAuthenticated = computed(() => userData.value !== null && userData.value.id !== null)
+    const needsProfileSetup = computed(() => {
+        if (!isAuthenticated.value) return false
+        return !userData.value?.birth || !userData.value?.name
+    })
 
     const currentTariff = computed(() => {
         if (!userData.value || !userData.value.tariff) {
@@ -136,15 +141,36 @@ export const useUserStore = defineStore('userStore', () => {
         }
     }
 
+    /**
+     * Инициализация - проверка существующей сессии
+     */
+    const initAuth = async () => {
+        try {
+            const { getSession } = await import('@/services/supabase.service')
+            const session = await getSession()
+            
+            if (session && session.user) {
+                await loadUserFromSupabase(session.user)
+            }
+        } catch (error) {
+            console.error('Ошибка инициализации авторизации:', error)
+        } finally {
+            isAuthChecking.value = false
+        }
+    }
+
     return { 
         userData,
+        isAuthChecking,
         isAuthenticated,
+        needsProfileSetup,
         tariffs, 
         currentTariff, 
         canAccessSpread,
         getRequiredTariffForSpread,
         loadUserFromSupabase,
         updateProfile,
-        signOut
+        signOut,
+        initAuth
     }
 })

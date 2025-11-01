@@ -1,25 +1,13 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { signInWithGoogle, getSession } from '@/services/supabase.service';
-import { useUserStore } from '@/stores/user.store';
+import { signInWithGoogle } from '@/services/supabase.service';
 import ButtonSpinner from '@/components/ButtonSpinner.vue';
 
 const router = useRouter();
-const userStore = useUserStore();
 
 const isLoading = ref(false);
 const error = ref('');
-
-// Проверяем, есть ли уже активная сессия
-onMounted(async () => {
-    const session = await getSession();
-    if (session) {
-        // Пользователь уже авторизован, перенаправляем на главную
-        await userStore.loadUserFromSupabase(session.user);
-        router.push('/');
-    }
-});
 
 const handleGoogleLogin = async () => {
     try {

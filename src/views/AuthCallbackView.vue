@@ -20,10 +20,8 @@ onMounted(async () => {
             // Загружаем данные пользователя в store
             await userStore.loadUserFromSupabase(session.user);
             
-            // Проверяем, заполнен ли профиль
-            const needsProfileSetup = !userStore.userData?.birth || !userStore.userData?.name;
-            
-            if (needsProfileSetup) {
+            // Проверяем, заполнен ли профиль через computed property
+            if (userStore.needsProfileSetup) {
                 // Показываем модалку настройки профиля
                 showProfileSetup.value = true;
             } else {

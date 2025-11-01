@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user.store';
 import { useModalStore } from '@/stores/modal.store';
 import { generateFullReading } from '@/services/mistral.service';
+import { saveReading } from '@/services/supabase.service';
 import { getZodiacSign } from '@/utils/zodiac';
 import ButtonSpinner from '@/components/ButtonSpinner.vue';
 
@@ -35,6 +36,31 @@ const loadFullReading = async () => {
         );
         
         fullReading.value = reading;
+
+        // Сохраняем гадание в историю
+        if (userStore.isAuthenticated && userStore.userData?.id) {
+            try {
+                await saveReading(userStore.userData.id, {
+                    question: modalStore.userQuestion,
+                    spreadType: modalStore.selectedSpread.id,
+                    spreadName: modalStore.selectedSpread.name,
+                    cards: modalStore.selectedCards.map(card => ({
+                        name: card.name,
+                        arcana: card.arcana,
+                        isReversed: card.isReversed,
+                        position: card.position,
+                        positionInfo: card.positionInfo,
+                        interpretation: card.interpretation,
+                        meaning: card.meaning
+                    })),
+                    interpretation: reading
+                });
+                console.log('Гадание сохранено в историю');
+            } catch (saveError) {
+                console.error('Ошибка сохранения гадания:', saveError);
+                // Не показываем ошибку пользователю, так как толкование уже получено
+            }
+        }
     } catch (err) {
         console.error('Ошибка получения финального толкования:', err);
         error.value = 'Не удалось получить толкование. Попробуйте ещё раз.';

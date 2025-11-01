@@ -1,9 +1,11 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user.store';
+import { getReadings } from '@/services/supabase.service';
 import PhotoUpload from '@/components/PhotoUpload.vue';
 import SpreadPreview from '@/components/SpreadPreview.vue';
+import ButtonSpinner from '@/components/ButtonSpinner.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -13,79 +15,84 @@ const name = ref(userStore.userData?.name || '');
 const birthDate = ref(userStore.userData?.birth || '');
 const photoUploadRef = ref(null);
 
-// Моковая история запросов
-const historyItems = ref([
-    {
-        id: 1,
-        date: '25.10.2024',
-        question: 'Что делать, если не к чему стремиться?',
-        spread: {
-            id: 'three-cards',
-            name: 'Три карты',
-            cardsCount: 3
-        },
-        cards: [
-            { name: 'Шут', position: 'Прямое', description: 'Свобода, начало, спонтанность' },
-            { name: 'Маг', position: 'Прямое', description: 'Воля, концентрация, мастерство' },
-            { name: 'Жрица', position: 'Перевернутое', description: 'Секреты, самообман' }
-        ],
-        finalReading: 'Это время для нового начала. Используйте свою силу воли и внутреннюю мудрость.'
-    },
-    {
-        id: 2,
-        date: '20.10.2024',
-        question: 'Какие перспективы в карьере?',
-        spread: {
-            id: 'one-card',
-            name: 'Одна карта',
-            cardsCount: 1
-        },
-        cards: [
-            { name: 'Колесо фортуны', position: 'Прямое', description: 'Судьба, перемены, поворот событий' }
-        ],
-        finalReading: 'Грядут значительные перемены. Будьте готовы к новым возможностям.'
-    },
-    {
-        id: 3,
-        date: '15.10.2024',
-        question: 'Как развивать отношения с партнером?',
-        spread: {
-            id: 'horseshoe',
-            name: 'Подкова',
-            cardsCount: 7
-        },
-        cards: [
-            { name: 'Влюблённые', position: 'Прямое', description: 'Выбор, единство, гармония' },
-            { name: 'Императрица', position: 'Прямое', description: 'Изобилие, забота, творчество' },
-            { name: 'Император', position: 'Прямое', description: 'Структура, власть, стабильность' },
-            { name: 'Жрец', position: 'Перевернутое', description: 'Догматизм, бунт против системы' },
-            { name: 'Колесница', position: 'Прямое', description: 'Победа, воля, контроль' },
-            { name: 'Сила', position: 'Прямое', description: 'Мужество, сострадание, стойкость' },
-            { name: 'Отшельник', position: 'Перевернутое', description: 'Изоляция, отрешенность' }
-        ],
-        finalReading: 'Отношения требуют баланса между близостью и личным пространством. Важно найти гармонию между заботой друг о друге и сохранением индивидуальности.'
+// История гаданий из БД
+const historyItems = ref([]);
+const isLoadingHistory = ref(false);
+const isLoadingMore = ref(false);
+
+// Пагинация
+const itemsPerPage = 5;
+const hasMore = ref(true);
+
+// Загружаем историю при монтировании компонента
+onMounted(async () => {
+    await loadHistory();
+});
+
+const loadHistory = async (append = false) => {
+    if (!userStore.userData?.id) return;
+
+    if (append) {
+        isLoadingMore.value = true;
+    } else {
+        isLoadingHistory.value = true;
     }
-]);
+
+    try {
+        const offset = append ? historyItems.value.length : 0;
+        const readings = await getReadings(userStore.userData.id, itemsPerPage, offset);
+        
+        // Преобразуем данные из БД в формат для отображения
+        const formattedReadings = readings.map(reading => ({
+            id: reading.id,
+            date: formatDate(reading.created_at),
+            question: reading.question,
+            spread: {
+                id: reading.spread_type,
+                name: reading.spread_name,
+                cardsCount: reading.cards.length
+            },
+            cards: reading.cards.map(card => ({
+                name: card.name,
+                position: card.isReversed ? 'Перевернутое' : 'Прямое',
+                description: card.meaning
+            })),
+            finalReading: reading.interpretation
+        }));
+
+        if (append) {
+            historyItems.value = [...historyItems.value, ...formattedReadings];
+        } else {
+            historyItems.value = formattedReadings;
+        }
+
+        // Проверяем, есть ли еще записи
+        hasMore.value = readings.length === itemsPerPage;
+    } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+    } finally {
+        isLoadingHistory.value = false;
+        isLoadingMore.value = false;
+    }
+};
+
+const loadMoreHistory = async () => {
+    if (!hasMore.value || isLoadingMore.value) return;
+    await loadHistory(true);
+};
+
+const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+};
 
 const activeAccordion = ref(null);
-const activeCardAccordions = ref({});
 
 const toggleAccordion = (id) => {
     activeAccordion.value = activeAccordion.value === id ? null : id;
-};
-
-const toggleCardAccordion = (itemId, cardIndex) => {
-    const key = `${itemId}-${cardIndex}`;
-    if (activeCardAccordions.value[key]) {
-        delete activeCardAccordions.value[key];
-    } else {
-        activeCardAccordions.value[key] = true;
-    }
-};
-
-const isCardAccordionActive = (itemId, cardIndex) => {
-    const key = `${itemId}-${cardIndex}`;
-    return !!activeCardAccordions.value[key];
 };
 
 const enableEditMode = () => {
@@ -220,7 +227,22 @@ const handleSignOut = async () => {
                 <section class="profile__section">
                     <h2 class="profile__section-title">История гаданий</h2>
                     
-                    <div class="profile__history">
+                    <!-- Состояние загрузки -->
+                    <div v-if="isLoadingHistory" class="profile__history-loading">
+                        <ButtonSpinner />
+                        <p>Загружаю историю...</p>
+                    </div>
+
+                    <!-- Пустое состояние -->
+                    <div v-else-if="historyItems.length === 0" class="profile__history-empty">
+                        <p>У вас пока нет сохраненных гаданий</p>
+                        <button class="btn btn--primary" @click="router.push('/')">
+                            Начать гадание
+                        </button>
+                    </div>
+
+                    <!-- История гаданий -->
+                    <div v-else class="profile__history">
                         <div 
                             v-for="item in historyItems" 
                             :key="item.id"
@@ -258,13 +280,8 @@ const handleSignOut = async () => {
                                         v-for="(card, index) in item.cards" 
                                         :key="index"
                                         class="card-detail"
-                                        :class="{ 'card-detail--active': isCardAccordionActive(item.id, index) }"
                                     >
-                                        <button 
-                                            type="button"
-                                            class="card-detail__toggle"
-                                            @click="toggleCardAccordion(item.id, index)"
-                                        >
+                                        <div class="card-detail__header">
                                             <div class="card-detail__card">
                                                 <img 
                                                     class="card-detail__card-image" 
@@ -276,15 +293,9 @@ const handleSignOut = async () => {
                                                 <span class="card-detail__name">{{ card.name }}</span>
                                                 <span class="card-detail__position">{{ card.position }}</span>
                                             </div>
-                                            <span class="card-detail__icon">
-                                                {{ isCardAccordionActive(item.id, index) ? '−' : '+' }}
-                                            </span>
-                                        </button>
+                                        </div>
                                         
-                                        <div 
-                                            v-if="isCardAccordionActive(item.id, index)"
-                                            class="card-detail__description-wrapper"
-                                        >
+                                        <div class="card-detail__description-wrapper">
                                             <p class="card-detail__description">{{ card.description }}</p>
                                         </div>
                                     </div>
@@ -297,27 +308,17 @@ const handleSignOut = async () => {
                             </div>
                         </div>
 
-                        <p v-if="historyItems.length === 0" class="profile__empty">
-                            У вас пока нет гаданий
-                        </p>
                     </div>
 
-                    <!-- Пагинация -->
-                    <div v-if="historyItems.length > 0" class="pagination">
-                        <button class="pagination__btn pagination__btn--prev" disabled>
-                            ← Назад
-                        </button>
-                        
-                        <div class="pagination__pages">
-                            <button class="pagination__page pagination__page--active">1</button>
-                            <button class="pagination__page">2</button>
-                            <button class="pagination__page">3</button>
-                            <span class="pagination__dots">...</span>
-                            <button class="pagination__page">10</button>
-                        </div>
-                        
-                        <button class="pagination__btn pagination__btn--next">
-                            Вперёд →
+                    <!-- Кнопка "Загрузить еще" -->
+                    <div v-if="!isLoadingHistory && historyItems.length > 0 && hasMore" class="profile__load-more">
+                        <button 
+                            class="btn btn--secondary" 
+                            @click="loadMoreHistory"
+                            :disabled="isLoadingMore"
+                        >
+                            <ButtonSpinner v-if="isLoadingMore" />
+                            <span>{{ isLoadingMore ? 'Загрузка...' : 'Загрузить еще' }}</span>
                         </button>
                     </div>
                 </section>
@@ -524,6 +525,38 @@ const handleSignOut = async () => {
         margin-bottom: $spacing-large;
     }
 
+    &__history-loading,
+    &__history-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: $spacing-middle;
+        padding: $spacing-large;
+        text-align: center;
+        color: $color-grey;
+        font-family: "Inter", Sans-serif;
+        font-size: 15px;
+    }
+
+    &__history-empty {
+        button {
+            margin-top: $spacing-small;
+        }
+    }
+
+    &__load-more {
+        display: flex;
+        justify-content: center;
+        padding-top: $spacing-middle;
+        margin-top: $spacing-middle;
+        border-top: 1px solid rgba($color-grey, 0.2);
+
+        button {
+            min-width: 200px;
+        }
+    }
+
     &__empty {
         font-family: "Inter", Sans-serif;
         font-size: 15px;
@@ -533,75 +566,6 @@ const handleSignOut = async () => {
     }
 }
 
-.pagination {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $spacing-middle;
-    padding-top: $spacing-middle;
-    border-top: 1px solid rgba($color-grey, 0.2);
-
-    &__btn {
-        padding: $spacing-small $spacing-middle;
-        font-family: "Inter", Sans-serif;
-        font-size: 14px;
-        font-weight: 600;
-        color: $color-white;
-        background-color: $color-bg-dark;
-        border: 2px solid transparent;
-        cursor: pointer;
-        transition: border-color 0.3s;
-
-        &:hover:not(:disabled) {
-            border-color: $color-pastel-orange;
-        }
-
-        &:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-    }
-
-    &__pages {
-        display: flex;
-        align-items: center;
-        gap: $spacing-x-smal;
-    }
-
-    &__page {
-        min-width: 40px;
-        height: 40px;
-        padding: $spacing-x-smal;
-        font-family: "Inter", Sans-serif;
-        font-size: 14px;
-        font-weight: 600;
-        color: $color-white;
-        background-color: $color-bg-dark;
-        border: 2px solid transparent;
-        cursor: pointer;
-        transition: border-color 0.3s, background-color 0.3s;
-
-        &:hover {
-            border-color: $color-pastel-orange;
-        }
-
-        &--active {
-            background-color: $color-pastel-orange;
-            color: $color-bg-dark;
-
-            &:hover {
-                border-color: transparent;
-            }
-        }
-    }
-
-    &__dots {
-        font-family: "Inter", Sans-serif;
-        font-size: 14px;
-        color: $color-grey;
-        padding: 0 $spacing-x-smal;
-    }
-}
 
 .history-item {
     background-color: $color-bg-dark;
@@ -715,27 +679,15 @@ const handleSignOut = async () => {
 
 .card-detail {
     background-color: $color-bg-light;
-    border: 2px solid transparent;
-    transition: border-color 0.3s;
+    padding: $spacing-middle;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-middle;
 
-    &--active {
-        border-color: $color-pastel-orange;
-    }
-
-    &__toggle {
-        width: 100%;
-        padding: $spacing-middle;
-        background: none;
-        border: none;
+    &__header {
         display: flex;
         gap: $spacing-middle;
         align-items: center;
-        cursor: pointer;
-        transition: background-color 0.3s;
-
-        &:hover {
-            background-color: rgba($color-bg-dark, 0.3);
-        }
     }
 
     &__card {
@@ -779,20 +731,8 @@ const handleSignOut = async () => {
         color: $color-grey;
     }
 
-    &__icon {
-        font-size: 28px;
-        color: $color-white;
-        flex-shrink: 0;
-        transition: transform 0.3s;
-    }
-
-    &--active &__icon {
-        transform: rotate(180deg);
-    }
-
     &__description-wrapper {
-        padding: 0 $spacing-middle $spacing-middle;
-        padding-left: calc(60px + $spacing-middle * 2);
+        padding-left: calc(60px + $spacing-middle);
     }
 
     &__description {
