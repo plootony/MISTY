@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user.store';
 import { getReadings } from '@/services/supabase.service';
-import PhotoUpload from '@/components/PhotoUpload.vue';
 import SpreadPreview from '@/components/SpreadPreview.vue';
 import ButtonSpinner from '@/components/ButtonSpinner.vue';
 
@@ -13,7 +12,6 @@ const userStore = useUserStore();
 const isEditMode = ref(false);
 const name = ref(userStore.userData?.name || '');
 const birthDate = ref(userStore.userData?.birth || '');
-const photoUploadRef = ref(null);
 
 // История гаданий из БД
 const historyItems = ref([]);
@@ -144,12 +142,6 @@ const handleSignOut = async () => {
                     
                     <!-- Режим просмотра -->
                     <div v-if="!isEditMode" class="profile__view">
-                        <div class="profile__avatar">
-                            <div class="profile__avatar-wrapper">
-                                <span class="profile__avatar-icon">👤</span>
-                            </div>
-                        </div>
-
                         <div class="profile__info">
                             <div class="profile__info-item">
                                 <span class="profile__info-label">Имя</span>
@@ -191,8 +183,6 @@ const handleSignOut = async () => {
 
                     <!-- Режим редактирования -->
                     <form v-else class="profile__form" @submit="saveChanges">
-                        <PhotoUpload ref="photoUploadRef" />
-
                         <div class="profile__field">
                             <label class="profile__label" for="name">Имя</label>
                             <input 
@@ -385,27 +375,6 @@ const handleSignOut = async () => {
         flex-direction: column;
         gap: $spacing-large;
         padding: $spacing-middle 0;
-    }
-
-    &__avatar {
-        display: flex;
-        justify-content: center;
-    }
-
-    &__avatar-wrapper {
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        background-color: $color-bg-dark;
-        border: 3px solid $color-pastel-orange;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    &__avatar-icon {
-        font-size: 64px;
-        opacity: 0.7;
     }
 
     &__info {

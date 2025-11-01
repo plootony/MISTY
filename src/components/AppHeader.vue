@@ -32,7 +32,6 @@ const userStore = useUserStore();
                         <span class="header__user-name">{{ userStore.userData?.name || 'Пользователь' }}</span>
                         <span class="header__tariff">{{ userStore.currentTariff.name }}</span>
                     </div>
-                    <span class="header__profile-icon">👤</span>
                 </RouterLink>
                 <RouterLink 
                     v-else 
@@ -167,10 +166,6 @@ const userStore = useUserStore();
         text-transform: uppercase;
         color: $color-pastel-orange;
         letter-spacing: 0.5px;
-    }
-
-    &__profile-icon {
-        font-size: 18px;
     }
 }
 </style>
