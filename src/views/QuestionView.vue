@@ -135,7 +135,7 @@ const submitQuestion = async () => {
 
         <div class="question__header">
             <img src="@/assets/images/stars-icon.png" alt="star icon" class="question__icon">
-            <p class="question__greeting">ПРИВЕТСТВУЮ ТЕБЯ, {{ userStore.userData.name.toUpperCase() }}</p>
+            <p class="question__greeting">ПРИВЕТСТВУЮ ТЕБЯ, {{ userStore.userData?.name?.toUpperCase() || 'ГОСТЬ' }}</p>
             <h1 class="question__title">Задай свой вопрос</h1>
             <p class="question__subtitle">Хорошо подумай прежде, чем задать вопрос</p>
         </div>

@@ -1,14 +1,16 @@
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user.store';
 import PhotoUpload from '@/components/PhotoUpload.vue';
 import SpreadPreview from '@/components/SpreadPreview.vue';
 
+const router = useRouter();
 const userStore = useUserStore();
 
 const isEditMode = ref(false);
-const name = ref(userStore.userData.name);
-const birthDate = ref(userStore.userData.birth);
+const name = ref(userStore.userData?.name || '');
+const birthDate = ref(userStore.userData?.birth || '');
 const photoUploadRef = ref(null);
 
 // Моковая история запросов
@@ -90,19 +92,36 @@ const enableEditMode = () => {
     isEditMode.value = true;
 };
 
-const saveChanges = (event) => {
+const saveChanges = async (event) => {
     event.preventDefault();
-    // Здесь будет логика сохранения изменений
-    userStore.userData.name = name.value;
-    userStore.userData.birth = birthDate.value;
-    isEditMode.value = false;
+    try {
+        // Сохраняем изменения через Supabase
+        await userStore.updateProfile({
+            name: name.value,
+            birth: birthDate.value
+        });
+        isEditMode.value = false;
+    } catch (error) {
+        console.error('Ошибка сохранения профиля:', error);
+        alert('Не удалось сохранить изменения');
+    }
 };
 
 const cancelEdit = () => {
     // Отменяем изменения
-    name.value = userStore.userData.name;
-    birthDate.value = userStore.userData.birth;
+    name.value = userStore.userData?.name || '';
+    birthDate.value = userStore.userData?.birth || '';
     isEditMode.value = false;
+};
+
+const handleSignOut = async () => {
+    try {
+        await userStore.signOut();
+        router.push('/auth');
+    } catch (error) {
+        console.error('Ошибка выхода:', error);
+        alert('Не удалось выйти из системы');
+    }
 };
 </script>
 
@@ -128,24 +147,34 @@ const cancelEdit = () => {
                             <div class="profile__info-item">
                                 <span class="profile__info-label">Имя</span>
                                 <div class="profile__info-value-wrapper">
-                                    <span class="profile__info-value">{{ userStore.userData.name }}</span>
+                                    <span class="profile__info-value">{{ userStore.userData?.name || 'Не указано' }}</span>
                                     <span class="profile__tariff-badge">{{ userStore.currentTariff.name }}</span>
                                 </div>
                             </div>
 
                             <div class="profile__info-item">
                                 <span class="profile__info-label">Дата рождения</span>
-                                <span class="profile__info-value">{{ userStore.userData.birth }}</span>
+                                <span class="profile__info-value">{{ userStore.userData?.birth || 'Не указано' }}</span>
                             </div>
                         </div>
 
-                        <button 
-                            type="button" 
-                            class="btn btn--primary profile__edit-btn"
-                            @click="enableEditMode"
-                        >
-                            Редактировать
-                        </button>
+                        <div class="profile__actions">
+                            <button 
+                                type="button" 
+                                class="btn btn--primary profile__edit-btn"
+                                @click="enableEditMode"
+                            >
+                                Редактировать
+                            </button>
+                            
+                            <button 
+                                type="button" 
+                                class="btn btn--secondary profile__signout-btn"
+                                @click="handleSignOut"
+                            >
+                                Выйти
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Режим редактирования -->
@@ -428,7 +457,15 @@ const cancelEdit = () => {
         border-radius: 4px;
     }
 
-    &__edit-btn {
+    &__actions {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-small;
+        width: 100%;
+    }
+
+    &__edit-btn,
+    &__signout-btn {
         width: 100%;
     }
 

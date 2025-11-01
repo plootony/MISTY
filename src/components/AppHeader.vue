@@ -14,12 +14,23 @@ const userStore = useUserStore();
 
             <nav class="header__nav">
                 <RouterLink to="/" class="header__link">Главная</RouterLink>
-                <RouterLink to="/profile" class="header__link header__link--profile">
+                <RouterLink 
+                    v-if="userStore.isAuthenticated" 
+                    to="/profile" 
+                    class="header__link header__link--profile"
+                >
                     <div class="header__user-info">
-                        <span class="header__user-name">{{ userStore.userData.name }}</span>
+                        <span class="header__user-name">{{ userStore.userData?.name || 'Пользователь' }}</span>
                         <span class="header__tariff">{{ userStore.currentTariff.name }}</span>
                     </div>
                     <span class="header__profile-icon">👤</span>
+                </RouterLink>
+                <RouterLink 
+                    v-else 
+                    to="/auth" 
+                    class="header__link"
+                >
+                    Войти
                 </RouterLink>
             </nav>
         </div>

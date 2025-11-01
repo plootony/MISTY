@@ -1,13 +1,37 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { signInWithGoogle, getSession } from '@/services/supabase.service';
+import { useUserStore } from '@/stores/user.store';
+import ButtonSpinner from '@/components/ButtonSpinner.vue';
 
-const isLogin = ref(true);
-const email = ref('');
-const password = ref('');
-const confirmPassword = ref('');
+const router = useRouter();
+const userStore = useUserStore();
 
-const toggleMode = () => {
-    isLogin.value = !isLogin.value;
+const isLoading = ref(false);
+const error = ref('');
+
+// Проверяем, есть ли уже активная сессия
+onMounted(async () => {
+    const session = await getSession();
+    if (session) {
+        // Пользователь уже авторизован, перенаправляем на главную
+        await userStore.loadUserFromSupabase(session.user);
+        router.push('/');
+    }
+});
+
+const handleGoogleLogin = async () => {
+    try {
+        isLoading.value = true;
+        error.value = '';
+        await signInWithGoogle();
+        // Редирект произойдет автоматически через OAuth
+    } catch (err) {
+        console.error('Ошибка входа через Google:', err);
+        error.value = 'Не удалось войти через Google. Попробуйте еще раз.';
+        isLoading.value = false;
+    }
 };
 </script>
 
@@ -16,59 +40,30 @@ const toggleMode = () => {
         <div class="auth__container">
             <div class="auth__header">
                 <img src="@/assets/images/stars-icon.png" alt="star icon" class="auth__icon">
-                <h1 class="auth__title">{{ isLogin ? 'Вход' : 'Регистрация' }}</h1>
+                <h1 class="auth__title">Добро пожаловать</h1>
                 <p class="auth__subtitle">
-                    {{ isLogin ? 'Войдите, чтобы продолжить гадание' : 'Создайте аккаунт для сохранения результатов' }}
+                    Войдите через Google, чтобы начать гадание
                 </p>
             </div>
 
-            <form class="auth__form">
-                <div class="auth__field">
-                    <label class="auth__label" for="email">Email</label>
-                    <input 
-                        v-model="email"
-                        type="email" 
-                        id="email"
-                        class="auth__input" 
-                        placeholder="your@email.com"
-                    >
-                </div>
-
-                <div class="auth__field">
-                    <label class="auth__label" for="password">Пароль</label>
-                    <input 
-                        v-model="password"
-                        type="password" 
-                        id="password"
-                        class="auth__input" 
-                        placeholder="••••••••"
-                    >
-                </div>
-
-                <div v-if="!isLogin" class="auth__field">
-                    <label class="auth__label" for="confirm-password">Подтвердите пароль</label>
-                    <input 
-                        v-model="confirmPassword"
-                        type="password" 
-                        id="confirm-password"
-                        class="auth__input" 
-                        placeholder="••••••••"
-                    >
-                </div>
-
-                <button type="submit" class="btn btn--primary auth__submit">
-                    {{ isLogin ? 'Войти' : 'Зарегистрироваться' }}
-                </button>
-            </form>
-
-            <div class="auth__footer">
-                <p class="auth__toggle-text">
-                    {{ isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?' }}
-                    <button type="button" class="auth__toggle-link" @click="toggleMode">
-                        {{ isLogin ? 'Зарегистрироваться' : 'Войти' }}
-                    </button>
-                </p>
+            <div v-if="error" class="auth__error">
+                {{ error }}
             </div>
+
+            <button 
+                @click="handleGoogleLogin" 
+                class="btn btn--google auth__google-btn"
+                :disabled="isLoading"
+            >
+                <ButtonSpinner v-if="isLoading" />
+                <svg v-else class="auth__google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span>{{ isLoading ? 'Вход...' : 'Войти через Google' }}</span>
+            </button>
         </div>
     </div>
 </template>
@@ -119,76 +114,55 @@ const toggleMode = () => {
         line-height: 1.5;
     }
 
-    &__form {
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-middle;
-    }
-
-    &__field {
-        display: flex;
-        flex-direction: column;
-        gap: $spacing-x-smal;
-    }
-
-    &__label {
+    &__error {
+        padding: $spacing-middle;
+        background-color: rgba(255, 84, 84, 0.1);
+        border-left: 3px solid $color-orange;
+        color: $color-orange;
         font-family: "Inter", Sans-serif;
         font-size: 14px;
-        font-weight: 600;
-        color: $color-white;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        margin-bottom: $spacing-middle;
     }
 
-    &__input {
-        font-family: "Playfair Display", Sans-serif;
-        font-size: 16px;
-        padding: $spacing-middle;
-        background-color: $color-bg-dark;
-        color: $color-white;
-        border: 2px solid transparent;
-        outline: none;
-        transition: border-color 0.3s;
-
-        &::placeholder {
-            color: $color-grey;
-        }
-
-        &:focus {
-            border-color: $color-pastel-orange;
-        }
-    }
-
-    &__submit {
-        margin-top: $spacing-small;
+    &__google-btn {
         width: 100%;
-    }
-
-    &__footer {
-        margin-top: $spacing-large;
-        text-align: center;
-    }
-
-    &__toggle-text {
-        font-family: "Inter", Sans-serif;
-        font-size: 15px;
-        color: $color-grey;
-    }
-
-    &__toggle-link {
-        background: none;
-        border: none;
-        color: $color-pastel-orange;
-        font-family: "Inter", Sans-serif;
-        font-size: 15px;
+        background-color: $color-white;
+        color: #1f1f1f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: $spacing-small;
+        padding: $spacing-middle $spacing-large;
+        font-family: "DM Sans", Sans-serif;
+        font-size: 18px;
         font-weight: 600;
-        cursor: pointer;
-        text-decoration: underline;
-        transition: color 0.3s;
+        transition: all 0.3s;
+        border: 2px solid transparent;
 
-        &:hover {
-            color: $color-orange;
+        &:hover:not(:disabled) {
+            background-color: #f8f8f8;
+            cursor: pointer;
         }
+
+        &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    }
+
+    &__google-icon {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+.btn--google {
+    background-color: $color-white;
+    color: #1f1f1f;
+
+    &:hover:not(:disabled) {
+        background-color: #f8f8f8;
+        opacity: 1;
     }
 }
 </style>

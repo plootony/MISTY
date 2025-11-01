@@ -15,7 +15,7 @@ const fullReading = ref('');
 const isLoading = ref(false);
 const error = ref('');
 
-const zodiacSign = getZodiacSign(userStore.userData.birth);
+const zodiacSign = getZodiacSign(userStore.userData?.birth || '01.01.2000');
 
 onMounted(async () => {
     await loadFullReading();
@@ -27,7 +27,7 @@ const loadFullReading = async () => {
 
     try {
         const reading = await generateFullReading(
-            userStore.userData,
+            userStore.userData || { name: 'Гость', birth: '01.01.2000' },
             zodiacSign,
             modalStore.userQuestion,
             modalStore.selectedSpread,

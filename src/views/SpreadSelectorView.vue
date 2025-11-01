@@ -34,7 +34,7 @@ const onMouseLeave = () => {
     <div class="spread-selector">
         <div class="spread-selector__header">
             <img src="@/assets/images/stars-icon.png" alt="star icon" class="spread-selector__icon">
-            <p class="spread-selector__greeting">ПРИВЕТСТВУЮ ТЕБЯ, {{ userStore.userData.name.toUpperCase() }}</p>
+            <p class="spread-selector__greeting">ПРИВЕТСТВУЮ ТЕБЯ, {{ userStore.userData?.name?.toUpperCase() || 'ГОСТЬ' }}</p>
             <h1 class="spread-selector__title">Сделай свой выбор</h1>
         </div>
 

@@ -29,10 +29,9 @@ const router = createRouter({
       component: () => import('../views/AuthView.vue'),
     },
     {
-      path: '/profile-setup',
-      name: 'profile-setup',
-      component: () => import('../views/ProfileSetupView.vue'),
-      meta: { requiresAuth: true }
+      path: '/auth/callback',
+      name: 'auth-callback',
+      component: () => import('../views/AuthCallbackView.vue'),
     },
     {
       path: '/profile',
@@ -44,13 +43,14 @@ const router = createRouter({
 })
 
 // Navigation guard для защиты роутов
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const modalStore = useModalStore()
   const userStore = useUserStore()
 
   // Проверка: требуется аутентификация
   if (to.meta.requiresAuth) {
-    if (!userStore.userData || !userStore.userData.id) {
+    // Проверяем через isAuthenticated computed property
+    if (!userStore.isAuthenticated) {
       // Пользователь не авторизован - редирект на auth
       next('/auth')
       return

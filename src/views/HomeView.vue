@@ -66,7 +66,7 @@ const selectCard = async (card) => {
     <div class="card-selector">
         <div class="card-selector__header">
             <img src="@/assets/images/stars-icon.png" alt="star icon" class="card-selector__icon">
-            <p class="card-selector__greeting">ПРИВЕТСТВУЮ ТЕБЯ, {{ userStore.userData.name.toUpperCase() }}</p>
+            <p class="card-selector__greeting">ПРИВЕТСТВУЮ ТЕБЯ, {{ userStore.userData?.name?.toUpperCase() || 'ГОСТЬ' }}</p>
             <h1 class="card-selector__title">Сделай свой выбор</h1>
             <p class="card-selector__subtitle">Не думай. Доверься судьбе. Просто выбери карту</p>
         </div>

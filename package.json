@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@mistralai/mistralai": "^1.10.0",
+    "@supabase/supabase-js": "^2.78.0",
     "pinia": "^3.0.3",
     "sass": "^1.93.2",
     "vue": "^3.5.22",
