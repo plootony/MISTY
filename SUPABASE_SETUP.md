@@ -367,10 +367,78 @@ interpretation  TEXT (финальное толкование)
 created_at      TIMESTAMP
 ```
 
+## 🛡️ Шаг 7: Настройка Google reCAPTCHA v3
+
+### Получение ключей reCAPTCHA:
+
+1. Перейдите в [Google reCAPTCHA Admin Console](https://www.google.com/recaptcha/admin/create)
+2. Зарегистрируйте новый сайт:
+   - **Label**: Misty Tarot App
+   - **reCAPTCHA type**: ✅ reCAPTCHA v3
+   - **Domains**: 
+     - `localhost` (для разработки)
+     - `yourdomain.com` (для продакшена)
+3. Примите условия использования
+4. Нажмите **Submit**
+5. Скопируйте **Site Key** и **Secret Key**
+
+### Добавление в переменные окружения:
+
+Добавьте в файл `.env`:
+
+```env
+# Google reCAPTCHA v3
+VITE_RECAPTCHA_SITE_KEY=your_site_key_here
+VITE_RECAPTCHA_SECRET_KEY=your_secret_key_here
+```
+
+> **⚠️ Важно:** 
+> - `VITE_RECAPTCHA_SITE_KEY` - публичный ключ (используется на клиенте)
+> - `VITE_RECAPTCHA_SECRET_KEY` - секретный ключ (НЕ добавляйте в клиентский код!)
+
+### Настройка серверной валидации (опционально):
+
+Для полной защиты рекомендуется создать Supabase Edge Function для проверки reCAPTCHA токена на сервере:
+
+```typescript
+// supabase/functions/verify-recaptcha/index.ts
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+
+serve(async (req) => {
+  const { token } = await req.json()
+  
+  const response = await fetch(
+    `https://www.google.com/recaptcha/api/siteverify`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${Deno.env.get('RECAPTCHA_SECRET_KEY')}&response=${token}`
+    }
+  )
+  
+  const data = await response.json()
+  
+  return new Response(
+    JSON.stringify({ 
+      success: data.success,
+      score: data.score 
+    }),
+    { headers: { 'Content-Type': 'application/json' } }
+  )
+})
+```
+
+Для развертывания Edge Function:
+```bash
+supabase functions deploy verify-recaptcha
+supabase secrets set RECAPTCHA_SECRET_KEY=your_secret_key_here
+```
+
 ## 🔒 Безопасность
 
 - ✅ Row Level Security (RLS) включен для всех таблиц
 - ✅ Пользователи могут видеть только свои данные
+- ✅ Google reCAPTCHA v3 защищает от ботов и DDoS
 - ✅ `anon` ключ безопасен для использования на клиенте
 - ⚠️ **НИКОГДА** не используйте `service_role` ключ на клиенте!
 

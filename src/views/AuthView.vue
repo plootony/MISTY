@@ -1,12 +1,14 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useReCaptcha } from 'vue-recaptcha-v3';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '@/services/supabase.service';
 import { useUserStore } from '@/stores/user.store';
 import ButtonSpinner from '@/components/ButtonSpinner.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
+const { executeRecaptcha, recaptchaLoaded } = useReCaptcha();
 
 const isLogin = ref(true); // true = вход, false = регистрация
 const email = ref('');
@@ -46,6 +48,16 @@ const handleEmailAuth = async () => {
         }
         
         isLoading.value = true;
+        
+        // Получаем reCAPTCHA токен
+        await recaptchaLoaded();
+        const recaptchaToken = await executeRecaptcha(isLogin.value ? 'login' : 'signup');
+        
+        if (!recaptchaToken) {
+            error.value = 'Ошибка проверки reCAPTCHA. Попробуйте еще раз.';
+            isLoading.value = false;
+            return;
+        }
         
         if (isLogin.value) {
             // Вход
