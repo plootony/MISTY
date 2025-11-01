@@ -163,6 +163,11 @@ const handleSignOut = async () => {
                                 <span class="profile__info-label">Дата рождения</span>
                                 <span class="profile__info-value">{{ userStore.userData?.birth || 'Не указано' }}</span>
                             </div>
+
+                            <div class="profile__info-item">
+                                <span class="profile__info-label">Ваш уникальный номер</span>
+                                <span class="profile__info-value">{{ userStore.userData?.user_number || '------' }}</span>
+                            </div>
                         </div>
 
                         <div class="profile__actions">

@@ -40,6 +40,7 @@ export const useUserStore = defineStore('userStore', () => {
     const userData = ref(null)
     const isAuthChecking = ref(true) // Проверяем сессию при загрузке
     const isAuthenticated = computed(() => userData.value !== null && userData.value.id !== null)
+    const isAdmin = computed(() => userData.value?.is_admin === true)
     const needsProfileSetup = computed(() => {
         if (!isAuthenticated.value) return false
         return !userData.value?.birth || !userData.value?.name
@@ -53,6 +54,10 @@ export const useUserStore = defineStore('userStore', () => {
     })
 
     const canAccessSpread = (spreadId) => {
+        // Админы имеют доступ ко всем раскладам
+        if (isAdmin.value) {
+            return true
+        }
         return currentTariff.value.allowedSpreads.includes(spreadId)
     }
 
@@ -94,7 +99,10 @@ export const useUserStore = defineStore('userStore', () => {
                 name: profile.name,
                 email: profile.email || supabaseUser.email,
                 birth: profile.birth,
-                tariff: profile.tariff || 'neophyte'
+                user_number: profile.user_number,
+                tariff: profile.tariff || 'neophyte',
+                is_active: profile.is_active !== false,
+                is_admin: profile.is_admin === true
             }
 
             return userData.value
@@ -163,6 +171,7 @@ export const useUserStore = defineStore('userStore', () => {
         userData,
         isAuthChecking,
         isAuthenticated,
+        isAdmin,
         needsProfileSetup,
         tariffs, 
         currentTariff, 

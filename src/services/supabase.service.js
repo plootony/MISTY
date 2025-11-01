@@ -21,6 +21,43 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // ============================================
 
 /**
+ * Регистрация через Email/Password
+ */
+export async function signUpWithEmail(email, password) {
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+    })
+    
+    if (error) {
+        console.error('Ошибка регистрации:', error)
+        throw error
+    }
+    
+    return data
+}
+
+/**
+ * Вход через Email/Password
+ */
+export async function signInWithEmail(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+    })
+    
+    if (error) {
+        console.error('Ошибка входа:', error)
+        throw error
+    }
+    
+    return data
+}
+
+/**
  * Авторизация через Google
  */
 export async function signInWithGoogle() {
@@ -115,9 +152,34 @@ export async function getProfile(userId) {
 }
 
 /**
+ * Генерация уникального 6-значного номера пользователя
+ */
+export async function generateUserNumber() {
+    const { data, error } = await supabase.rpc('generate_unique_user_number')
+    
+    if (error) {
+        console.error('Ошибка генерации номера пользователя:', error)
+        throw error
+    }
+    
+    return data
+}
+
+/**
  * Создание или обновление профиля
  */
 export async function upsertProfile(userId, profileData) {
+    // Если это новый профиль и нет user_number, генерируем его
+    if (!profileData.user_number) {
+        try {
+            profileData.user_number = await generateUserNumber()
+        } catch (error) {
+            console.error('Не удалось сгенерировать номер пользователя:', error)
+            // Fallback: генерируем на клиенте
+            profileData.user_number = Math.floor(Math.random() * 1000000).toString().padStart(6, '0')
+        }
+    }
+    
     const { data, error } = await supabase
         .from('profiles')
         .upsert({
@@ -179,5 +241,89 @@ export async function getReadings(userId, limit = 10, offset = 0) {
     }
     
     return data
+}
+
+// ============================================
+// ADMIN FUNCTIONS
+// ============================================
+
+/**
+ * Поиск пользователей (только для админа)
+ */
+export async function searchUsers(query, limit = 20) {
+    let request = supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit)
+    
+    // Если есть поисковый запрос
+    if (query && query.trim()) {
+        request = request.or(`name.ilike.%${query}%,email.ilike.%${query}%,user_number.ilike.%${query}%`)
+    }
+    
+    const { data, error } = await request
+    
+    if (error) {
+        console.error('Ошибка поиска пользователей:', error)
+        throw error
+    }
+    
+    return data
+}
+
+/**
+ * Обновление тарифа пользователя (только для админа)
+ */
+export async function updateUserTariff(userId, tariff) {
+    const { data, error } = await supabase
+        .from('profiles')
+        .update({ tariff, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+        .select()
+        .single()
+    
+    if (error) {
+        console.error('Ошибка обновления тарифа:', error)
+        throw error
+    }
+    
+    return data
+}
+
+/**
+ * Блокировка/разблокировка пользователя (только для админа)
+ */
+export async function toggleUserActive(userId, isActive) {
+    const { data, error } = await supabase
+        .from('profiles')
+        .update({ is_active: isActive, updated_at: new Date().toISOString() })
+        .eq('id', userId)
+        .select()
+        .single()
+    
+    if (error) {
+        console.error('Ошибка изменения статуса пользователя:', error)
+        throw error
+    }
+    
+    return data
+}
+
+/**
+ * Удаление пользователя (только для админа)
+ */
+export async function deleteUser(userId) {
+    const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId)
+    
+    if (error) {
+        console.error('Ошибка удаления пользователя:', error)
+        throw error
+    }
+    
+    return true
 }
 

@@ -41,8 +41,50 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Добавляем новые колонки если их нет
+DO $$ 
+BEGIN
+    -- Добавляем user_number
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'profiles' AND column_name = 'user_number') THEN
+        ALTER TABLE public.profiles ADD COLUMN user_number TEXT;
+    END IF;
+    
+    -- Добавляем is_active
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'profiles' AND column_name = 'is_active') THEN
+        ALTER TABLE public.profiles ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+    END IF;
+    
+    -- Добавляем is_admin
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'profiles' AND column_name = 'is_admin') THEN
+        ALTER TABLE public.profiles ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+    END IF;
+END $$;
+
+-- Обновляем существующие записи: устанавливаем значения по умолчанию
+UPDATE public.profiles SET is_active = TRUE WHERE is_active IS NULL;
+UPDATE public.profiles SET is_admin = FALSE WHERE is_admin IS NULL;
+
+-- Добавляем UNIQUE constraint для user_number если его нет
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'profiles_user_number_key') THEN
+        ALTER TABLE public.profiles ADD CONSTRAINT profiles_user_number_key UNIQUE (user_number);
+    END IF;
+END $$;
+
 -- Включаем Row Level Security
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Удаляем старые политики если они существуют
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can delete profiles" ON public.profiles;
 
 -- Политика: пользователи могут читать только свой профиль
 CREATE POLICY "Users can view own profile"
@@ -62,8 +104,82 @@ CREATE POLICY "Users can update own profile"
     FOR UPDATE
     USING (auth.uid() = id);
 
--- Индекс для быстрого поиска по email
+-- Политика: админы могут читать все профили
+-- Используем auth.jwt() для избежания рекурсии
+CREATE POLICY "Admins can view all profiles"
+    ON public.profiles
+    FOR SELECT
+    USING (
+        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
+        OR auth.uid() = id
+    );
+
+-- Политика: админы могут обновлять все профили
+CREATE POLICY "Admins can update all profiles"
+    ON public.profiles
+    FOR UPDATE
+    USING (
+        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
+        OR auth.uid() = id
+    );
+
+-- Политика: админы могут удалять профили
+CREATE POLICY "Admins can delete profiles"
+    ON public.profiles
+    FOR DELETE
+    USING (
+        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
+    );
+
+-- Индексы для быстрого поиска
 CREATE INDEX IF NOT EXISTS profiles_email_idx ON public.profiles(email);
+CREATE INDEX IF NOT EXISTS profiles_user_number_idx ON public.profiles(user_number);
+CREATE INDEX IF NOT EXISTS profiles_is_admin_idx ON public.profiles(is_admin);
+
+-- ============================================
+-- ФУНКЦИЯ ГЕНЕРАЦИИ УНИКАЛЬНОГО 6-ЗНАЧНОГО НОМЕРА
+-- ============================================
+
+CREATE OR REPLACE FUNCTION generate_unique_user_number()
+RETURNS TEXT AS $$
+DECLARE
+    new_number TEXT;
+    number_exists BOOLEAN;
+BEGIN
+    LOOP
+        -- Генерируем 6-значный номер
+        new_number := LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0');
+        
+        -- Проверяем уникальность
+        SELECT EXISTS(SELECT 1 FROM public.profiles WHERE user_number = new_number) INTO number_exists;
+        
+        -- Если номер уникален, выходим из цикла
+        IF NOT number_exists THEN
+            EXIT;
+        END IF;
+    END LOOP;
+    
+    RETURN new_number;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
+-- ГЕНЕРАЦИЯ НОМЕРОВ ДЛЯ СУЩЕСТВУЮЩИХ ПОЛЬЗОВАТЕЛЕЙ
+-- ============================================
+
+-- Генерируем номера для пользователей, у которых их нет
+DO $$
+DECLARE
+    user_record RECORD;
+BEGIN
+    FOR user_record IN 
+        SELECT id FROM public.profiles WHERE user_number IS NULL
+    LOOP
+        UPDATE public.profiles 
+        SET user_number = generate_unique_user_number() 
+        WHERE id = user_record.id;
+    END LOOP;
+END $$;
 
 -- ============================================
 -- ТАБЛИЦА ИСТОРИИ ГАДАНИЙ
@@ -82,6 +198,10 @@ CREATE TABLE IF NOT EXISTS public.readings (
 
 -- Включаем Row Level Security
 ALTER TABLE public.readings ENABLE ROW LEVEL SECURITY;
+
+-- Удаляем старые политики если они существуют
+DROP POLICY IF EXISTS "Users can view own readings" ON public.readings;
+DROP POLICY IF EXISTS "Users can insert own readings" ON public.readings;
 
 -- Политика: пользователи могут читать только свои гадания
 CREATE POLICY "Users can view own readings"
@@ -111,13 +231,79 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Удаляем старый триггер если существует
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
+
+-- Создаем триггер заново
 CREATE TRIGGER update_profiles_updated_at
     BEFORE UPDATE ON public.profiles
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- УСТАНОВКА АДМИНИСТРАТОРА
+-- ============================================
+
+-- После первого входа администратора через Google OAuth,
+-- выполните эти запросы для назначения прав администратора:
+
+-- 1. Обновляем профиль в таблице profiles
+UPDATE public.profiles 
+SET is_admin = TRUE 
+WHERE email = 'tonykeepfrozen@gmail.com';
+
+-- 2. Обновляем user_metadata в auth.users (ВАЖНО для RLS политик!)
+UPDATE auth.users
+SET raw_user_meta_data = raw_user_meta_data || '{"is_admin": true}'::jsonb
+WHERE email = 'tonykeepfrozen@gmail.com';
+
+-- Проверка: убедитесь что оба поля обновлены
+SELECT 
+    u.email,
+    p.is_admin as profile_is_admin,
+    u.raw_user_meta_data->>'is_admin' as metadata_is_admin
+FROM auth.users u
+LEFT JOIN public.profiles p ON p.id = u.id
+WHERE u.email = 'tonykeepfrozen@gmail.com';
 ```
 
-## 🔐 Шаг 4: Настройка Google OAuth
+## 📧 Шаг 4: Настройка Email авторизации
+
+### Включение Email провайдера:
+
+1. Перейдите в [Authentication Settings](https://supabase.com/dashboard/project/pkwacraoeckxijujupsk/auth/providers)
+2. Найдите **Email** в списке провайдеров
+3. Убедитесь что **Email** включен (по умолчанию включен)
+4. Настройте параметры:
+   - **Enable email confirmations**: ✅ Включено (пользователи должны подтвердить email)
+   - **Secure email change**: ✅ Включено (безопасная смена email)
+
+### Настройка Email Templates:
+
+1. Перейдите в [Email Templates](https://supabase.com/dashboard/project/pkwacraoeckxijujupsk/auth/templates)
+2. Настройте шаблоны писем:
+   - **Confirm signup** - письмо для подтверждения регистрации
+   - **Magic Link** - письмо с магической ссылкой для входа
+   - **Change Email Address** - письмо для смены email
+   - **Reset Password** - письмо для сброса пароля
+
+### Redirect URLs:
+
+В разделе **URL Configuration**:
+- **Site URL**: `http://localhost:5173` (для разработки)
+- **Redirect URLs**: 
+  ```
+  http://localhost:5173/auth/callback
+  http://localhost:5173/**
+  ```
+
+Для продакшена добавьте:
+```
+https://yourdomain.com/auth/callback
+https://yourdomain.com/**
+```
+
+## 🔐 Шаг 5: Настройка Google OAuth
 
 1. Перейдите в [Authentication Settings](https://supabase.com/dashboard/project/pkwacraoeckxijujupsk/auth/providers)
 2. Найдите **Google** в списке провайдеров
@@ -140,7 +326,7 @@ CREATE TRIGGER update_profiles_updated_at
 7. Скопируйте **Client ID** и **Client Secret**
 8. Вставьте их в настройки Google провайдера в Supabase
 
-## ✅ Шаг 5: Проверка настройки
+## ✅ Шаг 6: Проверка настройки
 
 После выполнения всех шагов:
 

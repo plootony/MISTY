@@ -39,6 +39,12 @@ const router = createRouter({
       component: () => import('../views/ProfileView.vue'),
       meta: { requiresAuth: true }
     },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../views/AdminView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
   ],
 })
 
@@ -75,6 +81,15 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresQuestion) {
     if (!modalStore.selectedSpread || !modalStore.userQuestion) {
       // Нет расклада или вопроса - редирект на главную
+      next('/')
+      return
+    }
+  }
+
+  // Проверка: требуются права администратора
+  if (to.meta.requiresAdmin) {
+    if (!userStore.isAdmin) {
+      // Пользователь не админ - редирект на главную
       next('/')
       return
     }

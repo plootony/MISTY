@@ -14,6 +14,15 @@ const userStore = useUserStore();
 
             <nav class="header__nav">
                 <RouterLink to="/" class="header__link">Главная</RouterLink>
+                
+                <RouterLink 
+                    v-if="userStore.isAdmin" 
+                    to="/admin" 
+                    class="header__link header__link--admin"
+                >
+                    👑 Админ панель
+                </RouterLink>
+                
                 <RouterLink 
                     v-if="userStore.isAuthenticated" 
                     to="/profile" 
@@ -100,6 +109,25 @@ const userStore = useUserStore();
 
         &.router-link-active {
             color: $color-pastel-orange;
+        }
+
+        &--admin {
+            padding: $spacing-x-smal $spacing-middle;
+            background-color: $color-pastel-orange;
+            color: $color-bg-dark;
+            font-weight: 700;
+            border-radius: 4px;
+            transition: opacity 0.3s;
+
+            &:hover {
+                opacity: 0.9;
+                color: $color-bg-dark;
+            }
+
+            &.router-link-active {
+                opacity: 1;
+                color: $color-bg-dark;
+            }
         }
 
         &--profile {
