@@ -113,5 +113,20 @@ export const useCardSelector = defineStore('cardSelectorStore', () => {
         }
     ])
 
-    return { deck }
+    /**
+     * Создаёт карту с случайным положением (прямое/перевёрнутое)
+     * @param {Object} card - Исходная карта
+     * @returns {Object} - Карта с добавленным полем isReversed
+     */
+    const createCardWithPosition = (card) => {
+        const isReversed = Math.random() < 0.5; // 50% шанс переворота
+        return {
+            ...card,
+            isReversed,
+            position: isReversed ? 'reversed' : 'upright',
+            meaning: isReversed ? card.reversed : card.upright
+        };
+    }
+
+    return { deck, createCardWithPosition }
 })

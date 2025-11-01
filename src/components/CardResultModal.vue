@@ -1,7 +1,17 @@
 <script setup>
+import { computed } from 'vue';
 import { useModalStore } from '@/stores/modal.store';
 
 const modalStore = useModalStore();
+
+const currentCard = computed(() => {
+    const cards = modalStore.selectedCards;
+    return cards.length > 0 ? cards[cards.length - 1] : null;
+});
+
+const cardPosition = computed(() => {
+    return currentCard.value?.isReversed ? 'Перевёрнутое положение' : 'Прямое положение';
+});
 
 const goToNext = () => {
     modalStore.closeCardResultModal();
@@ -29,22 +39,18 @@ const closeModal = () => {
                         <img src="@/assets/images/card.png" alt="Карта Таро" class="card-result__card-image">
                     </div>
 
-                    <div class="card-result__content">
+                    <div class="card-result__content" v-if="currentCard">
                         <div class="card-result__header">
                             <img src="@/assets/images/stars-icon.png" alt="star icon" class="card-result__icon">
-                            <p class="card-result__label">СТАРШИЙ АРКАН</p>
-                            <h1 class="card-result__title">КОЛЕСО ФОРТУНЫ</h1>
-                            <p class="card-result__position">Прямое положение</p>
+                            <p class="card-result__label">{{ currentCard.arcana?.toUpperCase() }}</p>
+                            <h1 class="card-result__title">{{ currentCard.name?.toUpperCase() }}</h1>
+                            <p class="card-result__position">{{ cardPosition }}</p>
+                            <p class="card-result__position-name">{{ currentCard.positionInfo?.name }}</p>
                         </div>
 
                         <div class="card-result__description">
                             <p class="card-result__text">
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                                Etiam mi tellus, pulvinar vel tempus eget, finibus vitae ante. 
-                                Fusce sit amet velit eleifend, iaculis velit quis, malesuada 
-                                lacus. Vestibulum sodales magna a volutpat tempus. Mauris 
-                                vestibulum id urna viverra ultrices. Nullam rhoncus elit eget 
-                                libero varius dapibus.
+                                {{ currentCard.interpretation || 'Загрузка толкования...' }}
                             </p>
                         </div>
 
@@ -120,6 +126,16 @@ const closeModal = () => {
         font-family: "Inter", Sans-serif;
         font-size: 16px;
         color: $color-grey;
+    }
+
+    &__position-name {
+        font-family: "Inter", Sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: $color-pastel-orange;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: $spacing-x-smal;
     }
 
     &__description {

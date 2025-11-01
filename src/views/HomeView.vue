@@ -2,6 +2,7 @@
 import { useUserStore } from '@/stores/user.store';
 import { useCardSelector } from '@/stores/cardSelector.store';
 import { useModalStore } from '@/stores/modal.store';
+import { interpretSingleCard } from '@/services/mistral.service';
 import CardResultModal from '@/components/CardResultModal.vue';
 import AnswerModal from '@/components/AnswerModal.vue';
 import CardLoader from '@/components/CardLoader.vue';
@@ -10,16 +11,53 @@ const userStore = useUserStore();
 const cardStore = useCardSelector();
 const modalStore = useModalStore();
 
-const selectCard = (card) => {
+const selectCard = async (card) => {
     const maxCards = modalStore.selectedSpread?.cardsCount || 3;
     if (modalStore.selectedCards.length < maxCards && !modalStore.isLoading) {
-        modalStore.addSelectedCard(card);
         modalStore.startLoading();
 
-        setTimeout(() => {
+        try {
+            // Создаём карту с случайным положением (прямое/перевёрнутое)
+            const cardWithPosition = cardStore.createCardWithPosition(card);
+            
+            // Получаем позицию карты в раскладе
+            const cardIndex = modalStore.selectedCards.length;
+            const position = modalStore.selectedSpread.positions[cardIndex];
+
+            // Получаем толкование карты от AI
+            const interpretation = await interpretSingleCard(
+                modalStore.userQuestion,
+                cardWithPosition,
+                position
+            );
+
+            // Сохраняем карту с толкованием
+            modalStore.addSelectedCard({
+                ...cardWithPosition,
+                interpretation,
+                positionInfo: position
+            });
+            
             modalStore.stopLoading();
             modalStore.openCardResultModal();
-        }, 2000);
+
+        } catch (error) {
+            console.error('Ошибка при толковании карты:', error);
+            modalStore.stopLoading();
+            
+            // Fallback: добавляем карту без толкования
+            const cardWithPosition = cardStore.createCardWithPosition(card);
+            const cardIndex = modalStore.selectedCards.length;
+            const position = modalStore.selectedSpread.positions[cardIndex];
+            
+            modalStore.addSelectedCard({
+                ...cardWithPosition,
+                interpretation: 'Не удалось получить толкование. Попробуйте ещё раз.',
+                positionInfo: position
+            });
+            
+            modalStore.openCardResultModal();
+        }
     }
 };
 </script>
