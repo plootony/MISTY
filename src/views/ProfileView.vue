@@ -415,7 +415,68 @@ const performAccountDeletion = async () => {
                             </div>
                         </div>
 
-                        <div class="profile__actions">
+                        <!-- Форма редактирования -->
+                        <form v-if="isEditing" @submit.prevent="saveProfile" class="profile__edit-form">
+                            <div class="profile__edit-field">
+                                <label class="profile__edit-label" for="editName">Имя</label>
+                                <input
+                                    id="editName"
+                                    v-model="editedName"
+                                    type="text"
+                                    class="profile__edit-input"
+                                    placeholder="Ваше имя"
+                                    required
+                                >
+                            </div>
+
+                            <div class="profile__edit-field">
+                                <label class="profile__edit-label" for="editBirthDate">Дата рождения</label>
+                                <input
+                                    id="editBirthDate"
+                                    v-model="editedBirthDate"
+                                    type="text"
+                                    class="profile__edit-input"
+                                    placeholder="ДД.ММ.ГГГГ"
+                                    @input="formatBirthDate"
+                                    maxlength="10"
+                                    required
+                                >
+                            </div>
+
+                            <div v-if="profileError" class="profile__edit-error">
+                                {{ profileError }}
+                            </div>
+
+                            <div class="profile__edit-actions">
+                                <button
+                                    type="button"
+                                    class="btn btn--secondary btn--small"
+                                    @click="cancelEditing"
+                                >
+                                    Отмена
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    class="btn btn--primary btn--small"
+                                    :disabled="isSavingProfile"
+                                >
+                                    <ButtonSpinner v-if="isSavingProfile" class="btn__icon" />
+                                    <span>{{ isSavingProfile ? 'Сохранение...' : 'Сохранить' }}</span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Кнопка редактирования -->
+                        <div v-else class="profile__actions">
+                            <button
+                                type="button"
+                                class="btn btn--secondary btn--small"
+                                @click="startEditing"
+                            >
+                                ✏️ Редактировать профиль
+                            </button>
+
                             <button
                                 v-if="userStore.isAdmin"
                                 type="button"
@@ -784,6 +845,65 @@ const performAccountDeletion = async () => {
         width: 100%;
     }
 
+    &__edit-form {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-middle;
+        margin-bottom: $spacing-middle;
+    }
+
+    &__edit-field {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-x-smal;
+    }
+
+    &__edit-label {
+        font-family: "Inter", Sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: $color-white;
+    }
+
+    &__edit-input {
+        padding: $spacing-middle;
+        background-color: $color-bg-dark;
+        border: 1px solid rgba($color-grey, 0.3);
+        border-radius: 4px;
+        color: $color-white;
+        font-family: "Inter", Sans-serif;
+        font-size: 16px;
+        transition: border-color 0.3s;
+
+        &::placeholder {
+            color: $color-grey;
+        }
+
+        &:focus {
+            outline: none;
+            border-color: $color-pastel-gold;
+        }
+
+        &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    }
+
+    &__edit-error {
+        padding: $spacing-small;
+        background-color: rgba(255, 84, 84, 0.1);
+        border-left: 3px solid $color-gold;
+        color: $color-gold;
+        font-family: "Inter", Sans-serif;
+        font-size: 14px;
+    }
+
+    &__edit-actions {
+        display: flex;
+        gap: $spacing-small;
+        justify-content: flex-end;
+    }
 
     &__actions {
         display: flex;

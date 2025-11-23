@@ -293,7 +293,7 @@ const formatBirthDate = (event) => {
     }
 
     &__terms {
-        margin-top: $spacing-middle;
+        margin: $spacing-middle 0;
         padding: $spacing-middle;
         background-color: rgba($color-bg-dark, 0.5);
         border-radius: 8px;

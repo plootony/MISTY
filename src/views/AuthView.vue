@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import VueHcaptcha from '@hcaptcha/vue3-hcaptcha';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '@/services/supabase.service';
 import { useUserStore } from '@/stores/user.store';
 import ButtonSpinner from '@/components/ButtonSpinner.vue';
@@ -17,26 +16,7 @@ const isLoadingEmail = ref(false);
 const isLoadingGoogle = ref(false);
 const error = ref('');
 const success = ref('');
-const hcaptchaRef = ref(null);
-const hcaptchaSiteKey = import.meta.env.VITE_HCAPTCHA_SITE_KEY || 'c6224f9c-dd12-45a2-bd82-be6c247e7d74';
-const hcaptchaToken = ref(null); // Храним токен здесь
 
-// Обработчики событий hCaptcha
-const onHcaptchaError = (event) => {
-    console.error('hCaptcha error:', event);
-    error.value = 'Ошибка проверки безопасности. Попробуйте еще раз.';
-};
-
-const onHcaptchaExpired = () => {
-    hcaptchaToken.value = null; // Сбрасываем токен
-    if (hcaptchaRef.value) {
-        hcaptchaRef.value.reset();
-    }
-};
-
-const onHcaptchaVerified = (token) => {
-    hcaptchaToken.value = token; // Сохраняем токен
-};
 
 const toggleMode = () => {
     isLogin.value = !isLogin.value;
@@ -44,15 +24,6 @@ const toggleMode = () => {
     success.value = '';
     password.value = '';
     confirmPassword.value = '';
-    hcaptchaToken.value = null; // Сбрасываем токен
-    // Сбрасываем hCaptcha при переключении режима
-    if (hcaptchaRef.value) {
-        try {
-            hcaptchaRef.value.reset();
-        } catch (err) {
-            // Игнорируем ошибки сброса при переключении режима
-        }
-    }
 };
 
 const handleEmailAuth = async () => {
@@ -76,56 +47,12 @@ const handleEmailAuth = async () => {
             return;
         }
         
-        // Получаем hCaptcha токен перед отправкой
-        let captchaToken = null;
-        if (hcaptchaSiteKey) {
-            if (!hcaptchaRef.value) {
-                console.error('hCaptcha: Виджет не инициализирован');
-                error.value = 'Виджет безопасности не загружен. Попробуйте перезагрузить страницу.';
-                return;
-            }
-
-            try {
-                // Сбрасываем предыдущий токен
-                hcaptchaToken.value = null;
-
-                // Запускаем верификацию (асинхронно)
-                hcaptchaRef.value.execute();
-
-                // Ждём токен через событие verify с таймаутом
-                captchaToken = await waitForCaptchaToken(10000); // 10 секунд таймаут
-
-                if (!captchaToken) {
-                    error.value = 'Время ожидания проверки безопасности истекло. Попробуйте еще раз.';
-                    return;
-                }
-            } catch (err) {
-                console.error('hCaptcha: Ошибка верификации:', err);
-                error.value = 'Ошибка проверки безопасности. Попробуйте еще раз.';
-                return;
-            }
-        }
-
-        // Функция ожидания токена
-        async function waitForCaptchaToken(timeoutMs = 10000) {
-            const startTime = Date.now();
-
-            while (Date.now() - startTime < timeoutMs) {
-                if (hcaptchaToken.value) {
-                    return hcaptchaToken.value;
-                }
-                await new Promise(resolve => setTimeout(resolve, 100)); // Проверяем каждые 100ms
-            }
-
-            return null; // Таймаут
-        }
-        
         isLoadingEmail.value = true;
         
         if (isLogin.value) {
             // Вход
             try {
-                const { session, user } = await signInWithEmail(email.value, password.value, captchaToken);
+                const { session, user } = await signInWithEmail(email.value, password.value);
                 if (user) {
                     await userStore.loadUserFromSupabase(user);
                     router.push('/');
@@ -141,7 +68,7 @@ const handleEmailAuth = async () => {
             }
         } else {
             // Регистрация
-            const { user, session } = await signUpWithEmail(email.value, password.value, captchaToken);
+            const { user, session } = await signUpWithEmail(email.value, password.value);
             if (user) {
                 if (session) {
                     // Пользователь сразу подтвержден (например, при отключенном email подтверждении)
@@ -154,16 +81,6 @@ const handleEmailAuth = async () => {
                     password.value = '';
                     confirmPassword.value = '';
                 }
-            }
-        }
-        
-        // Сбрасываем hCaptcha после успешной отправки
-        hcaptchaToken.value = null; // Сбрасываем токен
-        if (hcaptchaRef.value) {
-            try {
-                hcaptchaRef.value.reset();
-            } catch (err) {
-                // Игнорируем ошибки сброса
             }
         }
     } catch (err) {
@@ -253,18 +170,6 @@ const handleGoogleLogin = async () => {
                         :disabled="isLoadingEmail || isLoadingGoogle"
                         required
                     >
-                </div>
-
-                <!-- hCaptcha виджет -->
-                <div v-if="hcaptchaSiteKey" class="auth__captcha">
-                    <VueHcaptcha
-                        ref="hcaptchaRef"
-                        :sitekey="hcaptchaSiteKey"
-                        size="invisible"
-                        @error="onHcaptchaError"
-                        @expired="onHcaptchaExpired"
-                        @verify="onHcaptchaVerified"
-                    />
                 </div>
 
                 <button
@@ -390,11 +295,6 @@ const handleGoogleLogin = async () => {
         margin-bottom: $spacing-middle;
     }
 
-    &__captcha {
-        display: flex;
-        justify-content: center;
-        margin-bottom: $spacing-small;
-    }
 
     &__field {
         display: flex;
@@ -510,6 +410,37 @@ const handleGoogleLogin = async () => {
     &__google-icon {
         width: 24px;
         height: 24px;
+    }
+
+    @media (max-width: 768px) {
+     padding: $spacing-small;
+
+     &__title {
+        font-size: 32px;
+     }
+     
+     &__container {
+        padding: $spacing-middle;
+     }
+
+     &__header {
+        margin-bottom: $spacing-small;
+     }
+
+     &__form {
+        margin-bottom: 0;
+     }
+
+    
+     &__google-btn {
+        font-size: 16px;
+     }
+
+     &__toggle,
+     &__toggle-btn {
+        font-size: 16px;
+     }
+     
     }
 }
 </style>
